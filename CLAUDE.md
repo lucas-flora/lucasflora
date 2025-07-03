@@ -111,13 +111,11 @@ FallbackPage        • Static HTML/CSS showing your portfolio items
 └ FallbackPage.tsx ── static portfolio HTML/CSS
 
 ### the gist ... in prose
-You’re building a truly one-of-a-kind portfolio site that looks and feels like an old-school terminal trapped inside a curved CRT monitor, yet underneath it all it’s powered by the latest WebGPU technology.
-At its heart sits a React/Next.js application: your terminal UI is drawn onto an offscreen HTML canvas (using React-Konva or raw 2D APIs), then fed into Three.js via React-Three-Fiber as a texture on a gently bowed plane.
-A concise WGSL shader layer adds authentic scanlines, subtle vignetting, and curvature effects, while a bloom post-processing pass lets the screen (and a tiny power LED) glow convincingly against a dark scene.
-The code is entirely parametric—no static art assets. Your monitor’s housing is simply a rounded box whose dimensions follow the window’s aspect ratio, complete with an inset bezel and optional accents (screws, vents, knobs)
-all generated at runtime. Behind the scenes, a simple React “controller” manages an array of terminal entries (text lines, future widgets), listens for key events, and re-renders the canvas texture on each new line.
-If WebGPU isn’t available, the app gracefully falls back to a static Next.js gallery so every visitor still sees your work.
-We’ll start by getting a minimum viable pipeline up: project boilerplate, WebGPU detection, terminal state + offscreen canvas, canvas→texture bridge, a curved screen mesh with CRT shader, parametric bezel,
-and bloom. Once that slice is working, you can layer on a robust command parser, modular entry types (images, cards, even embedded 3D models), lightweight LLM chat integration,
-deeper shader polish (glass reflections, ghosting), and richer content fetched from a CMS. Deployed on Vercel, this site will be a living testament to both retro flair and modern GPU-driven creativity—an
-interactive portfolio that truly stands out.
+LucasFlora.com will be a unique portfolio website presented as a retro terminal interface on a 3D CRT monitor. The plan is to combine modern web tech with a nostalgic aesthetic. Key technologies include:
+	•	Next.js (React) – Provides project structure, routing, and easy deployment. The site will mostly run as a client-side app, but Next enables flexibility (e.g. a fallback static page for no-WebGPU users).
+	•	Three.js with WebGPU – Powers the 3D graphics and shader effects. We’ll use Three.js’s latest WebGPU renderer to leverage GPU features and modern shading (WGSL). No need to support old WebGL, since we’ll provide a fallback for non-WebGPU browsers.
+	•	React-Three-Fiber (R3F) – Integrates Three.js with React, letting us build the 3D scene as React components. This allows us to manage state and content easily in React while rendering the scene in Three.js ￼. An open-source experiment has shown this approach working well (using Three.js + R3F) ￼.
+	•	Canvas/Konva for Screen Content – We can render the terminal text and UI onto an off-screen HTML5 canvas (or use a library like React-Konva) and use that canvas as a texture on the 3D screen ￼. This means the on-screen content can be built with familiar React tools (text, images, etc.) and then displayed in the 3D scene ￼.
+	•	Shaders and Post-Processing – Custom shader effects (written in WGSL for WebGPU) will create the CRT screen look (scanlines, curvature, glow). We’ll also use a bloom post-processing pass for glowing highlights. All of this will be done with Three.js’s WebGPU capabilities.
+
+Development Strategy: We will build a minimum viable product (MVP) first that demonstrates the full pipeline end-to-end (basic terminal output on a 3D screen with CRT and bloom effects). Then we’ll iterate with more features. This ensures we “lock in” the core architecture early and have a working prototype before adding complexity. Given this is a personal project, we can keep formal testing light – quick manual testing is fine (no need to over-engineer test suites at this stage). Content can be hard-coded for now, but we’ll structure it to allow fetching or dynamic loading later without major rewrites.
