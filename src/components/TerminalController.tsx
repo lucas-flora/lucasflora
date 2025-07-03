@@ -11,9 +11,23 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
   const [entries, setEntries] = useState<TerminalEntry[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [, setIsInputFocused] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+  const handleTyping = useCallback(() => {
+    setIsTyping(true);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 250);
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    handleTyping();
+    
     if (e.key === 'Enter') {
       if (currentInput.trim()) {
         const newEntry = new TextEntry(currentInput);
@@ -22,17 +36,14 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
         onEntriesChange(newEntries);
         setCurrentInput('');
       }
-    } else if (e.key === 'Backspace') {
-      setCurrentInput(prev => prev.slice(0, -1));
-    } else if (e.key.length === 1) {
-      setCurrentInput(prev => prev + e.key);
     }
-  }, [currentInput, entries, onEntriesChange]);
+  }, [currentInput, entries, onEntriesChange, handleTyping]);
 
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentInput(e.target.value);
+    handleTyping();
+  }, [handleTyping]);
+
 
   useEffect(() => {
     if (inputRef.current) {
@@ -40,8 +51,14 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
     }
   }, []);
 
+  const handleTerminalClick = useCallback(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black text-white font-mono overflow-hidden">
+    <div className="fixed inset-0 bg-black text-white font-mono overflow-hidden" onClick={handleTerminalClick}>
       <div className="h-full flex flex-col">
         {/* Terminal output area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-1 flex flex-col-reverse">
@@ -57,7 +74,7 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
           <div className="flex items-center">
             <span className="text-white mr-2">&gt;</span>
             <span className="whitespace-pre">{currentInput}</span>
-            <span className="bg-white w-2 h-5 inline-block"></span>
+            <span className={`bg-white w-2 h-5 inline-block ${isTyping ? '' : 'cursor-blink'}`}></span>
           </div>
         </div>
       </div>
@@ -65,12 +82,19 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
       {/* Hidden input for focus */}
       <input
         ref={inputRef}
-        className="absolute opacity-0 pointer-events-none"
+        className="absolute opacity-0 pointer-events-auto"
+        style={{ left: '-9999px', top: '-9999px', width: '1px', height: '1px' }}
         value={currentInput}
-        onChange={() => {}}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
         onFocus={() => setIsInputFocused(true)}
         onBlur={() => setIsInputFocused(false)}
         autoFocus
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        inputMode="text"
       />
     </div>
   );

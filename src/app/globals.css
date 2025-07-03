@@ -55,5 +55,5 @@ body {
 }
 
 .cursor-blink {
-  animation: blink 150ms infinite;
+  animation: blink 1000ms infinite;
 }
