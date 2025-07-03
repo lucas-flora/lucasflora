@@ -46,7 +46,7 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
         {/* Terminal output area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-1 flex flex-col-reverse">
           {entries.slice().reverse().map((entry) => (
-            <div key={entry.id} className="whitespace-pre-wrap">
+            <div key={entry.id} className="whitespace-pre-wrap ml-4">
               {entry.render()}
             </div>
           ))}
@@ -55,9 +55,9 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
         {/* Input line */}
         <div className="p-4 border-t border-gray-800">
           <div className="flex items-center">
-            <span className="text-green-400 mr-2">$</span>
-            <span>{currentInput}</span>
-            <span className="cursor-blink ml-1 bg-white w-2 h-5 inline-block"></span>
+            <span className="text-white mr-2">&gt;</span>
+            <span className="whitespace-pre">{currentInput}</span>
+            <span className="bg-white w-2 h-5 inline-block"></span>
           </div>
         </div>
       </div>
