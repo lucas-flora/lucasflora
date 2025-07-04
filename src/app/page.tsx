@@ -22,9 +22,6 @@ const Monitor3D = dynamic(() => import('../components/Monitor3D'), {
   ssr: false,
 });
 
-const ScreenMesh = dynamic(() => import('../components/ScreenMesh'), {
-  ssr: false,
-});
 
 const DebugControls = dynamic(() => import('../components/DebugControls'), {
   ssr: false,
@@ -33,11 +30,21 @@ const DebugControls = dynamic(() => import('../components/DebugControls'), {
 // Removed camera controller - using fixed camera position
 
 // Main 3D scene component
-function MainScene({ housingZ, screenZ }: { housingZ: number; screenZ: number }) {
+function MainScene({screenZ }: { screenZ: number }) {
+  // Margin values in pixels
+  const marginTopPx = 24;
+  const marginRightPx = 24;
+  const marginBottomPx = 42;
+  const marginLeftPx = 24;
+
   return (
-    <Monitor3D housingZ={housingZ} screenZ={screenZ}>
-      <ScreenMesh />
-    </Monitor3D>
+    <Monitor3D
+      screenZ={screenZ}
+      marginTopPx={marginTopPx}
+      marginRightPx={marginRightPx}
+      marginBottomPx={marginBottomPx}
+      marginLeftPx={marginLeftPx}
+    />
   );
 }
 
@@ -84,7 +91,7 @@ export default function Home() {
         }}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene housingZ={housingZ} screenZ={screenZ} />
+        <MainScene screenZ={screenZ} />
       </Canvas>
       
       {/* Debug Controls */}
