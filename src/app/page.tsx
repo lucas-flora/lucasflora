@@ -89,6 +89,7 @@ export default function Home() {
           fov: 50,
           position: [0, 0, 2.6] // Much closer - monitor should fill screen
         }}
+        shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
         <MainScene screenZ={screenZ} />

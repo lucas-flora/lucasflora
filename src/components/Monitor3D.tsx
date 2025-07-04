@@ -4,6 +4,7 @@ import { useRef, useMemo, useEffect, useState } from 'react';
 import ScreenMesh from './ScreenMesh';
 // import { RoundedBox } from '@react-three/drei'; // Not needed for frame-based housing
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from '@react-three/drei';
 
 interface Monitor3DProps {
   screenZ?: number;
@@ -11,6 +12,33 @@ interface Monitor3DProps {
   marginRightPx: number;
   marginBottomPx: number;
   marginLeftPx: number;
+}
+
+// Adjustable bump map intensity
+const bumpScale = 5.0; // Increase for more pronounced texture
+const filletRadius = 0.02; // Fillet radius for rounded edges
+const filletSmoothness = 6; // Number of segments for smoothness
+
+// Utility to generate a simple noise texture for bump mapping
+function generateNoiseTexture(size = 128) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return new THREE.Texture(); // fallback: empty texture
+  const imgData = ctx.createImageData(size, size);
+  for (let i = 0; i < size * size * 4; i += 4) {
+    const val = Math.floor(Math.random() * 64) + 192; // subtle noise
+    imgData.data[i] = val;
+    imgData.data[i + 1] = val;
+    imgData.data[i + 2] = val;
+    imgData.data[i + 3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  const texture = new THREE.Texture(canvas);
+  texture.needsUpdate = true;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(8, 8);
+  return texture;
 }
 
 export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx }: Monitor3DProps) {
@@ -105,8 +133,8 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
     };
     
     // LED offsets in pixels
-    const ledRightPx = 72;
-    const ledBottomPx = 32;
+    const ledRightPx = 48;
+    const ledBottomPx = 24;
     const ledRightWorld = unitsPerPixelX * ledRightPx;
     const ledBottomWorld = unitsPerPixelY * ledBottomPx;
 
@@ -125,41 +153,79 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
     return { ...dims, topFrameY, bottomFrameY, screenYOffset, led: { x: ledX, y: ledY, z: ledZ } };
   }, [windowSize, screenZ, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx]); // Depends on windowSize and screenZ - will update on resize!
 
+  // Memoize the plastic material for the frame
+  const frameMaterial = useMemo(() => {
+    const bumpMap = generateNoiseTexture();
+    return new THREE.MeshPhysicalMaterial({
+      color: '#e5dcc5', // beige
+      roughness: 0.65,
+      metalness: 0.05,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.5,
+      bumpMap,
+      bumpScale,
+    });
+  }, []);
+
   return (
     <group ref={monitorRef}>
       {/* Housing Frame with CUTOUT - made of separate pieces - DIFFERENT SHADES */}
       
       {/* Dynamic FRAME around the screen */}
       {/* Top frame */}
-      <mesh position={[0, dimensions.topFrameY, 0]}>
-        <boxGeometry args={[
-          dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
-          dimensions.frame.top,
-          dimensions.housing.depth
-        ]} />
-        <meshBasicMaterial color="#1155FF" />
+      <mesh position={[0, dimensions.topFrameY, 0]} castShadow receiveShadow>
+        <RoundedBoxGeometry
+          args={[
+            dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
+            dimensions.frame.top,
+            dimensions.housing.depth
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
       </mesh>
       
       {/* Bottom frame */}
-      <mesh position={[0, dimensions.bottomFrameY, 0]}>
-        <boxGeometry args={[
-          dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
-          dimensions.frame.bottom,
-          dimensions.housing.depth
-        ]} />
-        <meshBasicMaterial color="#1155FF" />
+      <mesh position={[0, dimensions.bottomFrameY, 0]} castShadow receiveShadow>
+        <RoundedBoxGeometry
+          args={[
+            dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
+            dimensions.frame.bottom,
+            dimensions.housing.depth
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
       </mesh>
       
       {/* Left frame */}
-      <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, 0]}>
-        <boxGeometry args={[dimensions.frame.left, dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom, dimensions.housing.depth]} />
-        <meshBasicMaterial color="#1155FF" />
+      <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, 0]} castShadow receiveShadow>
+        <RoundedBoxGeometry
+          args={[
+            dimensions.frame.left,
+            dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom,
+            dimensions.housing.depth
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
       </mesh>
       
       {/* Right frame */}
-      <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, 0]}>
-        <boxGeometry args={[dimensions.frame.right, dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom, dimensions.housing.depth]} />
-        <meshBasicMaterial color="#1155FF" />
+      <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, 0]} castShadow receiveShadow>
+        <RoundedBoxGeometry
+          args={[
+            dimensions.frame.right,
+            dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom,
+            dimensions.housing.depth
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
       </mesh>
 
       {/* Screen area - RECESSED into housing */}
@@ -171,17 +237,21 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
         />
       </group>
 
-      {/* Basic Lighting */}
-      <ambientLight intensity={0.1} />
-      <directionalLight 
-        position={[2, 2, 2]} 
-        intensity={0.3}
-        castShadow={false}
+      {/* Lighting: Remove/reduce ambient, add point light for highlights */}
+      <ambientLight intensity={0.03} />
+      <pointLight
+        position={[-1,1,3]}
+        intensity={1.0}
+        distance={10}
+        decay={2}
+        castShadow
+        shadow-mapSize-width={512}
+        shadow-mapSize-height={512}
       />
 
       {/* Power LED - dome, positioned by pixel offset from right/bottom, flush with frame */}
         <mesh position={[dimensions.led.x, dimensions.led.y, dimensions.led.z]}>
-        <sphereGeometry args={[0.025,36,36]} />
+        <sphereGeometry args={[0.02,36,36]} />
         <meshBasicMaterial color="#00FF00" toneMapped={false} />
       </mesh>
     </group>
