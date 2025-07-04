@@ -27,20 +27,32 @@ export default function ScreenMesh() {
     return () => window.removeEventListener('resize', updateWindowSize);
   }, []);
   
-  // Screen dimensions based on WINDOW - MATCH Monitor3D exactly
+  // Screen dimensions based on camera frustum (matches Monitor3D)
   const screenDimensions = useMemo(() => {
     if (windowSize.width === 0) return { width: 4, height: 3 }; // Default until ready
-    
-    // Must match Monitor3D calculations exactly
+
     const windowAspectRatio = windowSize.width / windowSize.height;
-    const screenWidth = Math.min(windowSize.width * 0.004, 8); // SAME as Monitor3D
-    const screenHeight = screenWidth / windowAspectRatio; // SAME as Monitor3D
-    
+
+    // Camera parameters (keep in sync with page.tsx)
+    const cameraZ = 2.6;
+    const screenZ = -0.05; // Same default
+    const cameraFovDeg = 50;
+    const verticalFovRad = THREE.MathUtils.degToRad(cameraFovDeg);
+
+    const zDistance = cameraZ - screenZ;
+    const visibleHeight = 2 * zDistance * Math.tan(verticalFovRad / 2);
+    const visibleWidth = visibleHeight * windowAspectRatio;
+
+    // Margin in pixels (should match frame thickness in Monitor3D)
+    const marginPx = 24;
+    const unitsPerPixel = visibleHeight / windowSize.height;
+    const marginWorld = unitsPerPixel * marginPx;
+
     return {
-      width: screenWidth,
-      height: screenHeight,
+      width: visibleWidth - 2 * marginWorld,
+      height: visibleHeight - 2 * marginWorld,
     };
-  }, [windowSize]); // Depends on windowSize - will update on resize!
+  }, [windowSize]);
 
   // Create flat plane geometry - no curvature for now
   const flatGeometry = useMemo(() => {

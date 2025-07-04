@@ -39,84 +39,93 @@ export default function Monitor3D({ children, housingZ = -0.2, screenZ = -0.05 }
         housing: { width: 4.32, height: 3.24, depth: 0.4 },
         bezel: { thickness: 0.08, depth: 0.08 },
         radius: 0.1,
+        frame: { left: 0.1, right: 0.1, top: 0.15, bottom: 0.25 },
       };
     }
     
     // Get window aspect ratio (not camera-dependent)
     const windowAspectRatio = windowSize.width / windowSize.height;
     
-    // Base screen size that fills most of the window - MUCH BIGGER
-    const screenWidth = Math.min(windowSize.width * 0.004, 8); // Much bigger scale
-    const screenHeight = screenWidth / windowAspectRatio; // Match window aspect ratio
-    
-    // Housing dimensions 
-    const housingWidth = screenWidth * 1.08; // Small frame around screen
-    const housingHeight = screenHeight * 1.08;
+    // Camera parameters (must match <Canvas camera={...} />)
+    const cameraZ = 2.6;           // Distance of camera from origin (z-axis)
+    const cameraFovDeg = 50;       // Vertical FOV in degrees – keep in sync with page.tsx
+
+    // Vertical size of the view frustum at the Z depth of the screen
+    const zDistance = cameraZ - screenZ; // screenZ is slightly negative, so distance > cameraZ
+    const verticalFovRad = THREE.MathUtils.degToRad(cameraFovDeg);
+    const visibleHeight = 2 * zDistance * Math.tan(verticalFovRad / 2);
+    const visibleWidth  = visibleHeight * windowAspectRatio;
+
+    // Frame thickness in pixels (change this to your liking)
+    const frameThicknessPx = 24;
+    // World units per pixel at this camera setup
+    const unitsPerPixel = visibleHeight / windowSize.height;
+    const frameThicknessWorld = unitsPerPixel * frameThicknessPx;
+
+    // The screen fills the view except for the frame thickness on each side
+    const screenWidth = visibleWidth - 2 * frameThicknessWorld;
+    const screenHeight = visibleHeight - 2 * frameThicknessWorld;
+
+    // Use this for all four frame pieces
+    const leftFrameWidth = frameThicknessWorld;
+    const rightFrameWidth = frameThicknessWorld;
+    const topFrameHeight = frameThicknessWorld;
+    const bottomFrameHeight = frameThicknessWorld;
+
+    // Use fixed housing dimensions and calculated bezel
     const housingDepth = 0.4;
-    
-    // Bezel dimensions
-    const bezelThickness = screenWidth * 0.02; // Proportional to screen
+    const bezelThickness = 0.05; // Fixed bezel thickness
     const bezelDepth = 0.08;
     
     const dims = {
       screen: { width: screenWidth, height: screenHeight },
-      housing: { width: housingWidth, height: housingHeight, depth: housingDepth },
+      frame: { left: leftFrameWidth, right: rightFrameWidth, top: topFrameHeight, bottom: bottomFrameHeight },
+      housing: {
+        width: screenWidth + 0.1 + 0.1,
+        height: screenHeight + 0.25 + 0.25,
+        depth: housingDepth,
+      },
       bezel: { thickness: bezelThickness, depth: bezelDepth },
-      radius: Math.min(housingWidth, housingHeight) * 0.04,
+      radius: Math.min(screenWidth + 0.1 + 0.1, screenHeight + 0.25 + 0.25) * 0.04,
     };
     
     // DEBUG: Log dimensions
-    console.log('Monitor dimensions (RESPONSIVE):', dims, 'Window:', windowSize, 'Aspect:', windowAspectRatio);
+    console.log('Monitor dimensions (STABLE):', dims, 'Window:', windowSize, 'Aspect:', windowAspectRatio, 'Screen size:', { screenWidth, screenHeight });
     
     return dims;
-  }, [windowSize]); // Depends on windowSize - will update on resize!
+  }, [windowSize, screenZ]); // Depends on windowSize and screenZ - will update on resize!
 
   return (
     <group ref={monitorRef}>
       {/* Housing Frame with CUTOUT - made of separate pieces - DIFFERENT SHADES */}
-      {/* Back panel (solid) - Darkest red */}
+      {/* Back panel (solid) - orange */}
       <mesh position={[0, 0, housingZ - dimensions.housing.depth / 2]}>
         <boxGeometry args={[dimensions.housing.width, dimensions.housing.height, 0.02]} />
-        <meshBasicMaterial color="#CC0000" />
+        <meshBasicMaterial color="#CC5500" />
       </mesh>
       
-      {/* Top frame piece - Bright red */}
-      <mesh position={[0, dimensions.screen.height / 2 + dimensions.bezel.thickness / 2, housingZ]}>
-        <boxGeometry args={[
-          dimensions.housing.width, 
-          (dimensions.housing.height - dimensions.screen.height) / 2, 
-          dimensions.housing.depth
-        ]} />
-        <meshBasicMaterial color="#FF0000" />
+      {/* Dynamic FRAME around the screen */}
+      {/* Top frame */}
+      <mesh position={[0, dimensions.screen.height / 2 + dimensions.frame.top / 2, housingZ]}>
+        <boxGeometry args={[dimensions.housing.width, dimensions.frame.top, dimensions.housing.depth]} />
+        <meshBasicMaterial color="#1155FF" />
       </mesh>
       
-      {/* Bottom frame piece - Pink red */}
-      <mesh position={[0, -dimensions.screen.height / 2 - dimensions.bezel.thickness / 2, housingZ]}>
-        <boxGeometry args={[
-          dimensions.housing.width, 
-          (dimensions.housing.height - dimensions.screen.height) / 2, 
-          dimensions.housing.depth
-        ]} />
-        <meshBasicMaterial color="#FF3333" />
+      {/* Bottom frame */}
+      <mesh position={[0, -dimensions.screen.height / 2 - dimensions.frame.bottom / 2, housingZ]}>
+        <boxGeometry args={[dimensions.housing.width, dimensions.frame.bottom, dimensions.housing.depth]} />
+        <meshBasicMaterial color="#00FF55" />
       </mesh>
       
-      {/* Left frame piece - Orange red */}
-      <mesh position={[-dimensions.screen.width / 2 - dimensions.bezel.thickness / 2, 0, housingZ]}>
-        <boxGeometry args={[
-          (dimensions.housing.width - dimensions.screen.width) / 2, 
-          dimensions.screen.height, 
-          dimensions.housing.depth
-        ]} />
-        <meshBasicMaterial color="#FF6600" />
+      {/* Left frame */}
+      <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, housingZ]}>
+        <boxGeometry args={[dimensions.frame.left, dimensions.housing.height, dimensions.housing.depth]} />
+        <meshBasicMaterial color="#FF1177" />
       </mesh>
       
-      {/* Right frame piece - Dark orange red */}
-      <mesh position={[dimensions.screen.width / 2 + dimensions.bezel.thickness / 2, 0, housingZ]}>
-        <boxGeometry args={[
-          (dimensions.housing.width - dimensions.screen.width) / 2, 
-          dimensions.screen.height, 
-          dimensions.housing.depth
-        ]} />
+      {/* Right frame */}
+      <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, housingZ]}>
+        <boxGeometry args={[dimensions.frame.right, dimensions.housing.height, dimensions.housing.depth]} />
         <meshBasicMaterial color="#DD4400" />
       </mesh>
 
