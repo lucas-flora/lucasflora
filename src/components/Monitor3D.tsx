@@ -46,6 +46,8 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
         topFrameY: 1.5 - 0.15 / 2, // (visibleHeight/2) - (topFrameHeight/2) for default
         bottomFrameY: -1.5 + 0.25 / 2, // -(visibleHeight/2) + (bottomFrameHeight/2) for default
         screenYOffset: 0,
+        led: { x: 1, y: -1, z: 0 },
+        unitsPerPixel: 1,
       };
     }
     
@@ -63,11 +65,12 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
     const visibleWidth  = visibleHeight * windowAspectRatio;
 
     // World units per pixel at this camera setup
-    const unitsPerPixel = visibleHeight / windowSize.height;
-    const marginTopWorld = unitsPerPixel * marginTopPx;
-    const marginRightWorld = unitsPerPixel * marginRightPx;
-    const marginBottomWorld = unitsPerPixel * marginBottomPx;
-    const marginLeftWorld = unitsPerPixel * marginLeftPx;
+    const unitsPerPixelY = visibleHeight / windowSize.height;
+    const unitsPerPixelX = visibleWidth / windowSize.width;
+    const marginTopWorld = unitsPerPixelY * marginTopPx;
+    const marginRightWorld = unitsPerPixelX * marginRightPx;
+    const marginBottomWorld = unitsPerPixelY * marginBottomPx;
+    const marginLeftWorld = unitsPerPixelX * marginLeftPx;
 
     // The screen fills the view except for the margins on each side
     const screenWidth = visibleWidth - marginLeftWorld - marginRightWorld;
@@ -80,7 +83,7 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
     const bottomFrameHeight = marginBottomWorld;
 
     // Use fixed housing dimensions and calculated bezel
-    const housingDepth = 0.4;
+    const housingDepth = 0.1;
     const bezelThickness = 0.05; // Fixed bezel thickness
     const bezelDepth = 0.08;
     
@@ -97,18 +100,29 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       topFrameY: 1.5 - 0.15 / 2, // (visibleHeight/2) - (topFrameHeight/2) for default
       bottomFrameY: -1.5 + 0.25 / 2, // -(visibleHeight/2) + (bottomFrameHeight/2) for default
       screenYOffset: 0,
+      led: { x: 1, y: -1, z: 0 },
+      unitsPerPixel: 1,
     };
     
-    // DEBUG: Log dimensions
-    console.log('Monitor dimensions (STABLE):', dims, 'Window:', windowSize, 'Aspect:', windowAspectRatio, 'Screen size:', { screenWidth, screenHeight });
-    
+    // LED offsets in pixels
+    const ledRightPx = 72;
+    const ledBottomPx = 32;
+    const ledRightWorld = unitsPerPixelX * ledRightPx;
+    const ledBottomWorld = unitsPerPixelY * ledBottomPx;
+
+    // LED world position (from window edge, using same frustum logic as screen margin)
+    const ledX = (visibleWidth / 2) - ledRightWorld;
+    const ledY = -(visibleHeight / 2) + ledBottomWorld;
+    const ledZ = (housingDepth / 2); // flush with front face of frame
+    // const ledZ = ; // flush with front face of frame
+
     // Calculate top and bottom frame Y positions using visibleHeight
     const topFrameY = (visibleHeight / 2) - (topFrameHeight / 2);
     const bottomFrameY = -(visibleHeight / 2) + (bottomFrameHeight / 2);
     
     const screenYOffset = (marginBottomWorld - marginTopWorld) / 2;
     
-    return { ...dims, topFrameY, bottomFrameY, screenYOffset };
+    return { ...dims, topFrameY, bottomFrameY, screenYOffset, led: { x: ledX, y: ledY, z: ledZ } };
   }, [windowSize, screenZ, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx]); // Depends on windowSize and screenZ - will update on resize!
 
   return (
@@ -133,36 +147,19 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
           dimensions.frame.bottom,
           dimensions.housing.depth
         ]} />
-        <meshBasicMaterial color="#00FF55" />
+        <meshBasicMaterial color="#1155FF" />
       </mesh>
       
       {/* Left frame */}
       <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, 0]}>
         <boxGeometry args={[dimensions.frame.left, dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom, dimensions.housing.depth]} />
-        <meshBasicMaterial color="#FF1177" />
+        <meshBasicMaterial color="#1155FF" />
       </mesh>
       
       {/* Right frame */}
       <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, 0]}>
         <boxGeometry args={[dimensions.frame.right, dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom, dimensions.housing.depth]} />
-        <meshBasicMaterial color="#DD4400" />
-      </mesh>
-
-      {/* Bezel removed - screen will sit directly in enclosure */}
-
-      {/* Power LED - DEBUG: BRIGHT GREEN */}
-      <mesh 
-        position={[
-          dimensions.housing.width * 0.35, 
-          -dimensions.housing.height * 0.35, 
-          0.005
-        ]}
-      >
-        <sphereGeometry args={[0.03, 12, 12]} /> {/* Bigger for debug */}
-        <meshBasicMaterial 
-          color="#00FF00" // DEBUG: Bright green LED
-          toneMapped={false}
-        />
+        <meshBasicMaterial color="#1155FF" />
       </mesh>
 
       {/* Screen area - RECESSED into housing */}
@@ -181,6 +178,12 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
         intensity={0.3}
         castShadow={false}
       />
+
+      {/* Power LED - dome, positioned by pixel offset from right/bottom, flush with frame */}
+        <mesh position={[dimensions.led.x, dimensions.led.y, dimensions.led.z]}>
+        <sphereGeometry args={[0.025,36,36]} />
+        <meshBasicMaterial color="#00FF00" toneMapped={false} />
+      </mesh>
     </group>
   );
 } 
