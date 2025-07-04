@@ -58,7 +58,7 @@ export default function TerminalController({ onEntriesChange }: TerminalControll
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black text-white font-mono overflow-hidden" onClick={handleTerminalClick}>
+    <div className="fixed inset-0 bg-transparent text-white font-mono overflow-hidden" onClick={handleTerminalClick}>
       <div className="h-full flex flex-col">
         {/* Terminal output area */}
         <div className="flex-1 overflow-y-auto p-4 space-y-1 flex flex-col-reverse">

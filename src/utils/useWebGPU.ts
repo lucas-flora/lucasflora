@@ -44,6 +44,7 @@ export function useWebGPU(): WebGPUSupport {
         }
 
         // Try to request a WebGPU adapter
+        console.log('Requesting WebGPU adapter');
         const adapter = await navigator.gpu.requestAdapter();
         if (!adapter) {
           setState({
@@ -55,6 +56,7 @@ export function useWebGPU(): WebGPUSupport {
         }
 
         // WebGPU is supported and working
+        console.log('WebGPU adapter requested successfully');
         setState({
           supported: true,
           loading: false,

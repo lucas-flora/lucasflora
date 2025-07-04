@@ -17,23 +17,37 @@ const Canvas = dynamic(() => import('@react-three/fiber').then(mod => ({ default
   ),
 });
 
-// Temporary 3D scene component for testing
-function TestScene() {
+// Dynamically import 3D components to avoid SSR issues
+const Monitor3D = dynamic(() => import('../components/Monitor3D'), {
+  ssr: false,
+});
+
+const ScreenMesh = dynamic(() => import('../components/ScreenMesh'), {
+  ssr: false,
+});
+
+const DebugControls = dynamic(() => import('../components/DebugControls'), {
+  ssr: false,
+});
+
+// Removed camera controller - using fixed camera position
+
+// Main 3D scene component
+function MainScene({ housingZ, screenZ }: { housingZ: number; screenZ: number }) {
   return (
-    <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[10, 10, 10]} />
-      <mesh>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="orange" />
-      </mesh>
-    </>
+    <Monitor3D housingZ={housingZ} screenZ={screenZ}>
+      <ScreenMesh />
+    </Monitor3D>
   );
 }
 
 export default function Home() {
   const [entries, setEntries] = useState<TerminalEntry[]>([]);
   const { supported: webGPUSupported, loading: webGPULoading } = useWebGPU();
+  
+  // Debug positioning state (removed camera - using fixed position)
+  const [housingZ, setHousingZ] = useState(-0.2);
+  const [screenZ, setScreenZ] = useState(-0.05);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -56,7 +70,7 @@ export default function Home() {
 
   // Show the 3D experience if WebGPU is supported
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="min-h-screen bg-gray-900 relative">
       {/* R3F Canvas - will use WebGPU when available */}
       <Canvas
         gl={{
@@ -64,11 +78,22 @@ export default function Home() {
           alpha: true,
           preserveDrawingBuffer: true,
         }}
-        camera={{ position: [0, 0, 5] }}
+        camera={{ 
+          fov: 50,
+          position: [0, 0, 2.6] // Much closer - monitor should fill screen
+        }}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <TestScene />
+        <MainScene housingZ={housingZ} screenZ={screenZ} />
       </Canvas>
+      
+      {/* Debug Controls */}
+      <DebugControls 
+        housingZ={housingZ}
+        screenZ={screenZ}
+        onHousingZChange={setHousingZ}
+        onScreenZChange={setScreenZ}
+      />
       
       {/* Terminal overlay for now - will be integrated into 3D scene later */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
