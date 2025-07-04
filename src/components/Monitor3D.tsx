@@ -15,7 +15,7 @@ interface Monitor3DProps {
 }
 
 // Adjustable bump map intensity
-const bumpScale = 5.0; // Increase for more pronounced texture
+const bumpScale = 2.0; // Increase for more pronounced texture
 const filletRadius = 0.02; // Fillet radius for rounded edges
 const filletSmoothness = 6; // Number of segments for smoothness
 
@@ -157,10 +157,10 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture();
     return new THREE.MeshPhysicalMaterial({
-      color: '#e5dcc5', // beige
-      roughness: 0.65,
+      color: '#717171', // beige
+      roughness: 0.45,
       metalness: 0.05,
-      clearcoat: 0.15,
+      clearcoat: 0.05,
       clearcoatRoughness: 0.5,
       bumpMap,
       bumpScale,
@@ -173,7 +173,7 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       
       {/* Dynamic FRAME around the screen */}
       {/* Top frame */}
-      <mesh position={[0, dimensions.topFrameY, 0]} castShadow receiveShadow>
+      <mesh position={[0, dimensions.topFrameY, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
             dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
@@ -187,7 +187,7 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       </mesh>
       
       {/* Bottom frame */}
-      <mesh position={[0, dimensions.bottomFrameY, 0]} castShadow receiveShadow>
+      <mesh position={[0, dimensions.bottomFrameY, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
             dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
@@ -201,7 +201,7 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       </mesh>
       
       {/* Left frame */}
-      <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, 0]} castShadow receiveShadow>
+      <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
             dimensions.frame.left,
@@ -215,7 +215,7 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       </mesh>
       
       {/* Right frame */}
-      <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, 0]} castShadow receiveShadow>
+      <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
             dimensions.frame.right,
@@ -229,31 +229,53 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       </mesh>
 
       {/* Screen area - RECESSED into housing */}
-      <group position={[0, dimensions.screenYOffset, screenZ]}>
+      {/* <group position={[0, dimensions.screenYOffset, screenZ]}>
         <ScreenMesh
           width={dimensions.screen.width}
           height={dimensions.screen.height}
           yOffset={0}
         />
-      </group>
+      </group> */}
 
       {/* Lighting: Remove/reduce ambient, add point light for highlights */}
-      <ambientLight intensity={0.03} />
+      {/* <ambientLight intensity={0.03} /> */}
       <pointLight
         position={[-1,1,3]}
-        intensity={1.0}
+        intensity={2}
         distance={10}
         decay={2}
         castShadow
-        shadow-mapSize-width={512}
-        shadow-mapSize-height={512}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
       />
 
-      {/* Power LED - dome, positioned by pixel offset from right/bottom, flush with frame */}
-        <mesh position={[dimensions.led.x, dimensions.led.y, dimensions.led.z]}>
-        <sphereGeometry args={[0.02,36,36]} />
-        <meshBasicMaterial color="#00FF00" toneMapped={false} />
-      </mesh>
+      {/* Power LED - simple emissive sphere for realistic indicator effect */}
+      <group position={[dimensions.led.x, dimensions.led.y, dimensions.led.z]}>
+        {/* Emissive outer sphere */}
+        <mesh position={[0, 0, 0]} castShadow receiveShadow>
+          <sphereGeometry args={[0.02, 36, 36]} />
+          <meshPhysicalMaterial
+            color="#fff0c7"
+            emissive="#fff0c7"
+            emissiveIntensity={2.5}
+            roughness={0.32}
+            metalness={0.0}
+            clearcoat={0.2}
+            clearcoatRoughness={0.3}
+          />
+        </mesh>
+        {/* Subtle point light to simulate LED lighting the frame */}
+        <pointLight
+          color="#fff0c7"
+          intensity={0.01}
+          distance={0}
+          decay={2}
+          castShadow={true}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          position={[0, 0, .1]}
+        />
+      </group>
     </group>
   );
 } 
