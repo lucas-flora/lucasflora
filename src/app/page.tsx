@@ -34,12 +34,14 @@ function MainScene({
   screenZ,
   cornerRoundness,
   bubbleSize,
-  edgeTransition
+  edgeTransition,
+  displacementAmount
 }: { 
   screenZ: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
+  displacementAmount: number;
 }) {
   // Margin values in pixels
   const marginTopPx = 24;
@@ -57,6 +59,7 @@ function MainScene({
       cornerRoundness={cornerRoundness}
       bubbleSize={bubbleSize}
       edgeTransition={edgeTransition}
+      displacementAmount={displacementAmount}
     />
   );
 }
@@ -71,8 +74,9 @@ export default function Home() {
   
   // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.4);
-  const [bubbleSize, setBubbleSize] = useState(0.98);
-  const [edgeTransition, setEdgeTransition] = useState(0.06);
+  const [bubbleSize, setBubbleSize] = useState(0.99);
+  const [edgeTransition, setEdgeTransition] = useState(0.15);
+  const [displacementAmount, setDisplacementAmount] = useState(0.07);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -110,7 +114,7 @@ export default function Home() {
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene screenZ={screenZ} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} />
+        <MainScene screenZ={screenZ} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} displacementAmount={displacementAmount} />
       </Canvas>
       
       {/* Debug Controls */}
@@ -122,9 +126,11 @@ export default function Home() {
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
+        displacementAmount={displacementAmount}
         onCornerRoundnessChange={setCornerRoundness}
         onBubbleSizeChange={setBubbleSize}
         onEdgeTransitionChange={setEdgeTransition}
+        onDisplacementAmountChange={setDisplacementAmount}
       />
       
       {/* Terminal overlay for now - will be integrated into 3D scene later */}

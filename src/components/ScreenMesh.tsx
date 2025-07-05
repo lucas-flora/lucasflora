@@ -12,6 +12,7 @@ interface ScreenMeshProps {
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
+  displacementAmount?: number;
 }
 
 export default function ScreenMesh({ 
@@ -21,19 +22,22 @@ export default function ScreenMesh({
   debugMode = 0,
   cornerRoundness = 0.4,
   bubbleSize = 0.98,
-  edgeTransition = 0.06
+  edgeTransition = 0.06,
+  displacementAmount = 0.1
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // Create flat plane geometry - no curvature for now
-  const flatGeometry = useMemo(() => {
-    return new THREE.PlaneGeometry(width, height, 1, 1);
+  // Create subdivided plane geometry for smooth displacement
+  const subdivisionGeometry = useMemo(() => {
+    // Use enough subdivisions for smooth curves - 64x64 should be plenty
+    const segments = 64;
+    return new THREE.PlaneGeometry(width, height, segments, segments);
   }, [width, height]);
 
   return (
     <mesh 
       ref={meshRef}
-      geometry={flatGeometry}
+      geometry={subdivisionGeometry}
       position={[0, yOffset, 0]}
       castShadow={false}
       receiveShadow={false}
@@ -43,6 +47,7 @@ export default function ScreenMesh({
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
+        displacementAmount={displacementAmount}
       />
     </mesh>
   );

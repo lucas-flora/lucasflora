@@ -31,22 +31,47 @@ function createCheckerboardTexture(size = 64, squares = 8) {
 const vertexShader = `
 varying vec2 vUv;
 
+uniform float cornerRoundness;
+uniform float bubbleSize;
+uniform float edgeTransition;
+uniform float displacementAmount;
+
+// Bubble displacement map generator (same as fragment shader)
+float bubbleMap(vec2 uv, float cornerRadius, float size, float transition) {
+  // Convert UV to centered coordinates (-0.5 to 0.5)
+  vec2 pos = uv - 0.5;
+  
+  // Scale the rectangle size based on size parameter
+  vec2 rectSize = vec2(0.5, 0.5) * size;
+  
+  // Calculate distance to rounded rectangle
+  vec2 q = abs(pos) - rectSize + cornerRadius;
+  float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - cornerRadius;
+  
+  // Create smooth transition from bubble zone to edges
+  return 1.0 - smoothstep(-transition, transition, dist);
+}
+
 void main() {
   vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  
+  // Calculate bubble displacement
+  float cornerRadius = mix(0.01, 0.3, cornerRoundness);
+  float displacement = bubbleMap(uv, cornerRadius, bubbleSize, edgeTransition);
+  
+  // Apply displacement along normal (Z direction for flat plane)
+  vec3 displaced = position + normal * displacement * displacementAmount;
+  
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
 }
 `;
 
 const fragmentShader = `
 varying vec2 vUv;
-varying float vDisplacementMap;
 
 uniform sampler2D screenTex;
 uniform float scanlineStrength;
 uniform int debugMode;
-uniform float edgeHarshness;
-uniform float edgeWidth;
-uniform float centerSoftness;
 uniform float cornerRoundness;
 uniform float bubbleSize;
 uniform float edgeTransition;
@@ -58,7 +83,7 @@ float scanlineMap(vec2 uv, float strength) {
   return dim;
 }
 
-// Bubble displacement map generator
+// Bubble displacement map generator (same as vertex shader)
 float bubbleMap(vec2 uv, float cornerRadius, float size, float transition) {
   // Convert UV to centered coordinates (-0.5 to 0.5)
   vec2 pos = uv - 0.5;
@@ -120,6 +145,7 @@ interface ScreenShaderMaterialProps {
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
+  displacementAmount?: number;
   testTexture?: Texture;
   [key: string]: unknown;
 }
@@ -130,6 +156,7 @@ export default function ScreenShaderMaterial({
   cornerRoundness = 0.4,
   bubbleSize = 0.98,
   edgeTransition = 0.06,
+  displacementAmount = 0.1,
   testTexture,
   ...props
 }: ScreenShaderMaterialProps) {
@@ -146,11 +173,12 @@ export default function ScreenShaderMaterial({
           cornerRoundness: { value: cornerRoundness },
           bubbleSize: { value: bubbleSize },
           edgeTransition: { value: edgeTransition },
+          displacementAmount: { value: displacementAmount },
         },
         vertexShader,
         fragmentShader,
       }),
-    [checkerboard, testTexture, scanlineStrength, debugMode, cornerRoundness, bubbleSize, edgeTransition]
+    [checkerboard, testTexture, scanlineStrength, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount]
   );
 
   // Update uniforms on prop change
@@ -159,6 +187,7 @@ export default function ScreenShaderMaterial({
   material.uniforms.cornerRoundness.value = cornerRoundness;
   material.uniforms.bubbleSize.value = bubbleSize;
   material.uniforms.edgeTransition.value = edgeTransition;
+  material.uniforms.displacementAmount.value = displacementAmount;
   if (testTexture) material.uniforms.screenTex.value = testTexture;
 
   return <primitive object={material} attach="material" {...props} />;

@@ -10,9 +10,11 @@ interface DebugControlsProps {
   onCornerRoundnessChange: (value: number) => void;
   onBubbleSizeChange: (value: number) => void;
   onEdgeTransitionChange: (value: number) => void;
+  onDisplacementAmountChange: (value: number) => void;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
+  displacementAmount: number;
 }
 
 export default function DebugControls({ 
@@ -23,9 +25,11 @@ export default function DebugControls({
   onCornerRoundnessChange,
   onBubbleSizeChange,
   onEdgeTransitionChange,
+  onDisplacementAmountChange,
   cornerRoundness,
   bubbleSize,
-  edgeTransition
+  edgeTransition,
+  displacementAmount
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -126,6 +130,21 @@ export default function DebugControls({
             step={0.01}
             value={edgeTransition}
             onChange={(e) => onEdgeTransitionChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Displacement Amount: {displacementAmount.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={1.0}
+            step={0.01}
+            value={displacementAmount}
+            onChange={(e) => onDisplacementAmountChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>
