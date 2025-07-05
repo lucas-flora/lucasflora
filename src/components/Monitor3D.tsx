@@ -76,6 +76,8 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
         screenYOffset: 0,
         led: { x: 1, y: -1, z: 0 },
         unitsPerPixel: 1,
+        screenMeshWidth: 4, // match default screen width
+        screenMeshHeight: 3, // match default screen height
       };
     }
     
@@ -100,9 +102,24 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
     const marginBottomWorld = unitsPerPixelY * marginBottomPx;
     const marginLeftWorld = unitsPerPixelX * marginLeftPx;
 
-    // The screen fills the view except for the margins on each side
+    // Move fudge and mesh size calculation outside useMemo so they are in scope for render
+    const fudgeW = 0.05;
+    const fudgeH = 0.05;
+
+    // Calculate screen size WITHOUT fudge for frame/housing
     const screenWidth = visibleWidth - marginLeftWorld - marginRightWorld;
     const screenHeight = visibleHeight - marginTopWorld - marginBottomWorld;
+
+    // Use these for the mesh only
+    const screenMeshWidth = screenWidth + fudgeW;
+    const screenMeshHeight = screenHeight + fudgeH;
+
+    // Debugging output
+    console.log('[Monitor3D] visibleWidth:', visibleWidth, 'visibleHeight:', visibleHeight);
+    console.log('[Monitor3D] marginLeftWorld:', marginLeftWorld, 'marginRightWorld:', marginRightWorld, 'marginTopWorld:', marginTopWorld, 'marginBottomWorld:', marginBottomWorld);
+    console.log('[Monitor3D] screenWidth:', screenWidth, 'screenHeight:', screenHeight);
+    // Log the values passed to ScreenMesh
+    console.log('[Monitor3D] Passing to ScreenMesh width:', screenMeshWidth, 'height:', screenMeshHeight);
 
     // Use these for all four frame pieces
     const leftFrameWidth = marginLeftWorld;
@@ -150,7 +167,7 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
     
     const screenYOffset = (marginBottomWorld - marginTopWorld) / 2;
     
-    return { ...dims, topFrameY, bottomFrameY, screenYOffset, led: { x: ledX, y: ledY, z: ledZ } };
+    return { ...dims, topFrameY, bottomFrameY, screenYOffset, led: { x: ledX, y: ledY, z: ledZ }, screenMeshWidth, screenMeshHeight };
   }, [windowSize, screenZ, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx]); // Depends on windowSize and screenZ - will update on resize!
 
   // Memoize the plastic material for the frame
@@ -229,16 +246,16 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
       </mesh>
 
       {/* Screen area - RECESSED into housing */}
-      {/* <group position={[0, dimensions.screenYOffset, screenZ]}>
+      <group position={[0, dimensions.screenYOffset, screenZ]}>
         <ScreenMesh
-          width={dimensions.screen.width}
-          height={dimensions.screen.height}
+          width={dimensions.screenMeshWidth}
+          height={dimensions.screenMeshHeight}
           yOffset={0}
+          debugMode={0}
         />
-      </group> */}
+      </group>
 
       {/* Lighting: Remove/reduce ambient, add point light for highlights */}
-      {/* <ambientLight intensity={0.03} /> */}
       <pointLight
         position={[-1,1,3]}
         intensity={2}

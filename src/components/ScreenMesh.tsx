@@ -2,14 +2,16 @@
 
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
+import ScreenShaderMaterial from './ScreenShaderMaterial';
 
 interface ScreenMeshProps {
   width: number;
   height: number;
   yOffset: number;
+  debugMode?: number; // 0 = normal, 1 = fresnel, 2 = scanlines
 }
 
-export default function ScreenMesh({ width, height, yOffset }: ScreenMeshProps) {
+export default function ScreenMesh({ width, height, yOffset, debugMode = 0 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Create flat plane geometry - no curvature for now
@@ -17,20 +19,15 @@ export default function ScreenMesh({ width, height, yOffset }: ScreenMeshProps) 
     return new THREE.PlaneGeometry(width, height, 1, 1);
   }, [width, height]);
 
-  // Basic material for now - will be replaced with canvas texture later
-  const screenMaterial = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      color: '#00FFFF', // DEBUG: Bright cyan for screen
-      side: THREE.FrontSide,
-    });
-  }, []);
-
   return (
     <mesh 
       ref={meshRef}
       geometry={flatGeometry}
-      material={screenMaterial}
       position={[0, yOffset, 0]}
-    />
+      castShadow={false}
+      receiveShadow={false}
+    >
+      <ScreenShaderMaterial debugMode={debugMode} />
+    </mesh>
   );
 } 

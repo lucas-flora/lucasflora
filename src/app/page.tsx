@@ -77,7 +77,7 @@ export default function Home() {
 
   // Show the 3D experience if WebGPU is supported
   return (
-    <div className="min-h-screen bg-gray-900 relative">
+    <div className="min-h-screen bg-red-500 relative">
       {/* R3F Canvas - will use WebGPU when available */}
       <Canvas
         gl={{
