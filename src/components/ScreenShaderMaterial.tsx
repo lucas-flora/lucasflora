@@ -127,13 +127,17 @@ void main() {
     return;
   }
 
-  // Normal rendering: apply effects
+  // Normal rendering: apply effects and make emissive
   vec3 baseColor = texture2D(screenTex, vUv).rgb;
   
   // Apply scanlines to content
-  vec3 finalColor = baseColor * scanlines;
+  vec3 scanlinedColor = baseColor * scanlines;
   
-  gl_FragColor = vec4(finalColor, 1.0);
+  // Make the screen emissive for bloom - boost brightness significantly
+  // CRT screens are bright light sources, not just reflective surfaces
+  vec3 emissiveColor = scanlinedColor * 2.5; // Boost for bloom
+  
+  gl_FragColor = vec4(emissiveColor, 1.0);
 }
 `;
 
@@ -154,9 +158,9 @@ export default function ScreenShaderMaterial({
   debugMode = 0,
   scanlineStrength = 0.15,
   cornerRoundness = 0.4,
-  bubbleSize = 0.98,
-  edgeTransition = 0.06,
-  displacementAmount = 0.1,
+  bubbleSize = 0.99,
+  edgeTransition = 0.15,
+  displacementAmount = 0.07,
   testTexture,
   ...props
 }: ScreenShaderMaterialProps) {
@@ -177,6 +181,7 @@ export default function ScreenShaderMaterial({
         },
         vertexShader,
         fragmentShader,
+        toneMapped: false, // Allow bright values for bloom
       }),
     [checkerboard, testTexture, scanlineStrength, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount]
   );

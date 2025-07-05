@@ -21,16 +21,16 @@ export default function ScreenMesh({
   yOffset, 
   debugMode = 0,
   cornerRoundness = 0.4,
-  bubbleSize = 0.98,
-  edgeTransition = 0.06,
-  displacementAmount = 0.1
+  bubbleSize = 0.99,
+  edgeTransition = 0.15,
+  displacementAmount = 0.07
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Create subdivided plane geometry for smooth displacement
   const subdivisionGeometry = useMemo(() => {
     // Use enough subdivisions for smooth curves - 64x64 should be plenty
-    const segments = 64;
+    const segments = 128;
     return new THREE.PlaneGeometry(width, height, segments, segments);
   }, [width, height]);
 

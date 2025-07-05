@@ -52,9 +52,9 @@ export default function Monitor3D({
   marginBottomPx, 
   marginLeftPx,
   cornerRoundness = 0.4,
-  bubbleSize = 0.98,
-  edgeTransition = 0.06,
-  displacementAmount = 0.1
+  bubbleSize = 0.99,
+  edgeTransition = 0.15,
+  displacementAmount = 0.07
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
