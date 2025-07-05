@@ -10,9 +10,15 @@ interface DebugControlsProps {
   onEdgeHarshnessChange: (value: number) => void;
   onEdgeWidthChange: (value: number) => void;
   onCenterSoftnessChange: (value: number) => void;
+  onCornerRoundnessChange: (value: number) => void;
+  onBubbleSizeChange: (value: number) => void;
+  onEdgeTransitionChange: (value: number) => void;
   edgeHarshness: number;
   edgeWidth: number;
   centerSoftness: number;
+  cornerRoundness: number;
+  bubbleSize: number;
+  edgeTransition: number;
 }
 
 export default function DebugControls({ 
@@ -23,9 +29,15 @@ export default function DebugControls({
   onEdgeHarshnessChange,
   onEdgeWidthChange,
   onCenterSoftnessChange,
+  onCornerRoundnessChange,
+  onBubbleSizeChange,
+  onEdgeTransitionChange,
   edgeHarshness,
   edgeWidth,
-  centerSoftness
+  centerSoftness,
+  cornerRoundness,
+  bubbleSize,
+  edgeTransition
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -126,6 +138,51 @@ export default function DebugControls({
             step={0.1}
             value={centerSoftness}
             onChange={(e) => onCenterSoftnessChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Corner Roundness: {cornerRoundness.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={1.0}
+            step={0.05}
+            value={cornerRoundness}
+            onChange={(e) => onCornerRoundnessChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Bubble Size: {bubbleSize.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={1.0}
+            step={0.01}
+            value={bubbleSize}
+            onChange={(e) => onBubbleSizeChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Edge Transition: {edgeTransition.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={1.0}
+            step={0.01}
+            value={edgeTransition}
+            onChange={(e) => onEdgeTransitionChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

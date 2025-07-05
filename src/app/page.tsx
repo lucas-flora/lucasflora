@@ -34,12 +34,18 @@ function MainScene({
   screenZ,
   edgeHarshness,
   edgeWidth,
-  centerSoftness
+  centerSoftness,
+  cornerRoundness,
+  bubbleSize,
+  edgeTransition
 }: { 
   screenZ: number;
   edgeHarshness: number;
   edgeWidth: number;
   centerSoftness: number;
+  cornerRoundness: number;
+  bubbleSize: number;
+  edgeTransition: number;
 }) {
   // Margin values in pixels
   const marginTopPx = 24;
@@ -57,6 +63,9 @@ function MainScene({
       edgeHarshness={edgeHarshness}
       edgeWidth={edgeWidth}
       centerSoftness={centerSoftness}
+      cornerRoundness={cornerRoundness}
+      bubbleSize={bubbleSize}
+      edgeTransition={edgeTransition}
     />
   );
 }
@@ -70,9 +79,12 @@ export default function Home() {
   const [screenZ, setScreenZ] = useState(-0.05);
   
   // Displacement map parameters
-  const [edgeHarshness, setEdgeHarshness] = useState(3.0);
-  const [edgeWidth, setEdgeWidth] = useState(0.15);
-  const [centerSoftness, setCenterSoftness] = useState(0.8);
+  const [edgeHarshness, setEdgeHarshness] = useState(5.4);
+  const [edgeWidth, setEdgeWidth] = useState(0.22);
+  const [centerSoftness, setCenterSoftness] = useState(0.1);
+  const [cornerRoundness, setCornerRoundness] = useState(0.4);
+  const [bubbleSize, setBubbleSize] = useState(0.98);
+  const [edgeTransition, setEdgeTransition] = useState(0.06);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -110,7 +122,7 @@ export default function Home() {
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene screenZ={screenZ} edgeHarshness={edgeHarshness} edgeWidth={edgeWidth} centerSoftness={centerSoftness} />
+        <MainScene screenZ={screenZ} edgeHarshness={edgeHarshness} edgeWidth={edgeWidth} centerSoftness={centerSoftness} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} />
       </Canvas>
       
       {/* Debug Controls */}
@@ -122,9 +134,15 @@ export default function Home() {
         edgeHarshness={edgeHarshness}
         edgeWidth={edgeWidth}
         centerSoftness={centerSoftness}
+        cornerRoundness={cornerRoundness}
+        bubbleSize={bubbleSize}
+        edgeTransition={edgeTransition}
         onEdgeHarshnessChange={setEdgeHarshness}
         onEdgeWidthChange={setEdgeWidth}
         onCenterSoftnessChange={setCenterSoftness}
+        onCornerRoundnessChange={setCornerRoundness}
+        onBubbleSizeChange={setBubbleSize}
+        onEdgeTransitionChange={setEdgeTransition}
       />
       
       {/* Terminal overlay for now - will be integrated into 3D scene later */}

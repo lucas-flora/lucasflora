@@ -15,6 +15,9 @@ interface Monitor3DProps {
   edgeHarshness?: number;
   edgeWidth?: number;
   centerSoftness?: number;
+  cornerRoundness?: number;
+  bubbleSize?: number;
+  edgeTransition?: number;
 }
 
 // Adjustable bump map intensity
@@ -50,9 +53,12 @@ export default function Monitor3D({
   marginRightPx, 
   marginBottomPx, 
   marginLeftPx,
-  edgeHarshness = 3.0,
-  edgeWidth = 0.15,
-  centerSoftness = 0.8
+  edgeHarshness = 5.4,
+  edgeWidth = 0.22,
+  centerSoftness = 0.1,
+  cornerRoundness = 0.4,
+  bubbleSize = 0.98,
+  edgeTransition = 0.06
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -267,6 +273,9 @@ export default function Monitor3D({
           edgeHarshness={edgeHarshness}
           edgeWidth={edgeWidth}
           centerSoftness={centerSoftness}
+          cornerRoundness={cornerRoundness}
+          bubbleSize={bubbleSize}
+          edgeTransition={edgeTransition}
         />
       </group>
 

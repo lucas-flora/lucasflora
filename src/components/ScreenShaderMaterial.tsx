@@ -67,6 +67,9 @@ uniform int debugMode;
 uniform float edgeHarshness;
 uniform float edgeWidth;
 uniform float centerSoftness;
+uniform float cornerRoundness;
+uniform float bubbleSize;
+uniform float edgeTransition;
 
 // Scanline effect
 float scanline(vec2 uv, float strength) {
@@ -75,7 +78,7 @@ float scanline(vec2 uv, float strength) {
   return dim;
 }
 
-// Calculate distance from nearest edge (0 = at edge, 0.5 = at center)
+// Calculate distance from nearest edge (0 = at center, 1 = at edges)
 float edgeDistance(vec2 uv) {
   // Distance from each edge
   float distFromLeft = uv.x;
@@ -85,7 +88,36 @@ float edgeDistance(vec2 uv) {
   
   // Minimum distance to any edge
   float minEdgeDist = min(min(distFromLeft, distFromRight), min(distFromTop, distFromBottom));
-  return minEdgeDist;
+  
+  // Convert to 0 = center, 1 = edges
+  // Max distance from center to edge is 0.5
+  return 1.0 - (minEdgeDist / 0.5);
+}
+
+// Calculate circular distance from center (0 = at center, 1 = at edges)
+float circularDistance(vec2 uv) {
+  vec2 center = vec2(0.5, 0.5);
+  float dist = distance(uv, center);
+  
+  // Normalize to 0-1 range (0 = center, 1 = edges)
+  // Max distance from center to corner is ~0.707
+  return dist / 0.707;
+}
+
+// Rounded rectangle distance function - now for defining bubble zone
+float roundedRectDistance(vec2 uv, float cornerRadius, float size) {
+  // Convert UV to centered coordinates (-0.5 to 0.5)
+  vec2 pos = uv - 0.5;
+  
+  // Scale the rectangle size based on bubbleSize parameter
+  vec2 rectSize = vec2(0.5, 0.5) * size;
+  
+  // Calculate distance to rounded rectangle
+  vec2 q = abs(pos) - rectSize + cornerRadius;
+  float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - cornerRadius;
+  
+  // Return raw distance (negative = inside, positive = outside)
+  return dist;
 }
 
 void main() {
@@ -93,22 +125,18 @@ void main() {
   float scan = scanline(vUv, scanlineStrength);
 
   if (debugMode == 1) {
-    // Show displacement map based on distance from edges
-    float edgeDist = edgeDistance(vUv);
+    // Define bubble zone with rounded rectangle
+    float cornerRadius = mix(0.01, 0.3, cornerRoundness);
+    float distToRect = roundedRectDistance(vUv, cornerRadius, bubbleSize);
     
-    // Create a single smooth gradient with controllable falloff
-    // Normalize edge distance to 0-1 range (0 = edge, 1 = center)
-    float normalizedDist = edgeDist / 0.5;
+    // Create smooth transition from bubble zone to edges
+    // Negative distance = inside bubble (white)
+    // Positive distance = outside bubble (black)
+    float displacementMap = 1.0 - smoothstep(-edgeTransition, edgeTransition, distToRect);
     
-    // Create a smooth falloff that's sharp near edges, soft in middle
-    // Use a combination of two functions for control
-    float sharpFalloff = 1.0 - pow(normalizedDist, 1.0 / edgeHarshness);
-    float softFalloff = 1.0 - pow(normalizedDist, centerSoftness);
-    
-    // Blend between sharp and soft based on distance
-    float blendFactor = smoothstep(0.0, edgeWidth * 2.0, normalizedDist);
-    float displacementMap = mix(sharpFalloff, softFalloff, blendFactor);
-    
+    // Result: 1 (white) inside bubble = maximum displacement toward camera
+    //         0 (black) at edges = no displacement = stays put
+    //         Smooth transition controlled by edgeTransition
     gl_FragColor = vec4(vec3(displacementMap), 1.0);
     return;
   } else if (debugMode == 2) {
@@ -132,7 +160,10 @@ interface ScreenShaderMaterialProps {
   edgeHarshness?: number;
   edgeWidth?: number;
   centerSoftness?: number;
+  cornerRoundness?: number;
   testTexture?: Texture;
+  bubbleSize?: number;
+  edgeTransition?: number;
   [key: string]: unknown;
 }
 
@@ -140,10 +171,13 @@ export default function ScreenShaderMaterial({
   debugMode = 0,
   scanlineStrength = 0.15,
   curvatureAmount = 0.03,
-  edgeHarshness = 2.0,
-  edgeWidth = 0.2,
-  centerSoftness = 0.5,
+  edgeHarshness = 5.4,
+  edgeWidth = 0.22,
+  centerSoftness = 0.1,
+  cornerRoundness = 1.0,
   testTexture,
+  bubbleSize = 1.0,
+  edgeTransition = 0.1,
   ...props
 }: ScreenShaderMaterialProps) {
   // Use a static checkerboard texture for now
@@ -160,11 +194,14 @@ export default function ScreenShaderMaterial({
           edgeHarshness: { value: edgeHarshness },
           edgeWidth: { value: edgeWidth },
           centerSoftness: { value: centerSoftness },
+          cornerRoundness: { value: cornerRoundness },
+          bubbleSize: { value: bubbleSize },
+          edgeTransition: { value: edgeTransition },
         },
         vertexShader,
         fragmentShader,
       }),
-    [checkerboard, testTexture, scanlineStrength, curvatureAmount, debugMode, edgeHarshness, edgeWidth, centerSoftness]
+    [checkerboard, testTexture, scanlineStrength, curvatureAmount, debugMode, edgeHarshness, edgeWidth, centerSoftness, cornerRoundness, bubbleSize, edgeTransition]
   );
 
   // Update uniforms on prop change
@@ -174,6 +211,9 @@ export default function ScreenShaderMaterial({
   material.uniforms.edgeHarshness.value = edgeHarshness;
   material.uniforms.edgeWidth.value = edgeWidth;
   material.uniforms.centerSoftness.value = centerSoftness;
+  material.uniforms.cornerRoundness.value = cornerRoundness;
+  material.uniforms.bubbleSize.value = bubbleSize;
+  material.uniforms.edgeTransition.value = edgeTransition;
   if (testTexture) material.uniforms.screenTex.value = testTexture;
 
   return <primitive object={material} attach="material" {...props} />;

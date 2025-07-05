@@ -12,6 +12,9 @@ interface ScreenMeshProps {
   edgeHarshness?: number;
   edgeWidth?: number;
   centerSoftness?: number;
+  cornerRoundness?: number;
+  bubbleSize?: number;
+  edgeTransition?: number;
 }
 
 export default function ScreenMesh({ 
@@ -19,9 +22,12 @@ export default function ScreenMesh({
   height, 
   yOffset, 
   debugMode = 0,
-  edgeHarshness = 2.0,
-  edgeWidth = 0.2,
-  centerSoftness = 0.5
+  edgeHarshness = 5.4,
+  edgeWidth = 0.22,
+  centerSoftness = 0.1,
+  cornerRoundness = 1.0,
+  bubbleSize = 0.8,
+  edgeTransition = 0.1
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -43,6 +49,9 @@ export default function ScreenMesh({
         edgeHarshness={edgeHarshness}
         edgeWidth={edgeWidth}
         centerSoftness={centerSoftness}
+        cornerRoundness={cornerRoundness}
+        bubbleSize={bubbleSize}
+        edgeTransition={edgeTransition}
       />
     </mesh>
   );
