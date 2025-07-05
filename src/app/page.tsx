@@ -32,17 +32,11 @@ const DebugControls = dynamic(() => import('../components/DebugControls'), {
 // Main 3D scene component
 function MainScene({
   screenZ,
-  edgeHarshness,
-  edgeWidth,
-  centerSoftness,
   cornerRoundness,
   bubbleSize,
   edgeTransition
 }: { 
   screenZ: number;
-  edgeHarshness: number;
-  edgeWidth: number;
-  centerSoftness: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
@@ -60,9 +54,6 @@ function MainScene({
       marginRightPx={marginRightPx}
       marginBottomPx={marginBottomPx}
       marginLeftPx={marginLeftPx}
-      edgeHarshness={edgeHarshness}
-      edgeWidth={edgeWidth}
-      centerSoftness={centerSoftness}
       cornerRoundness={cornerRoundness}
       bubbleSize={bubbleSize}
       edgeTransition={edgeTransition}
@@ -78,10 +69,7 @@ export default function Home() {
   const [housingZ, setHousingZ] = useState(-0.2);
   const [screenZ, setScreenZ] = useState(-0.05);
   
-  // Displacement map parameters
-  const [edgeHarshness, setEdgeHarshness] = useState(5.4);
-  const [edgeWidth, setEdgeWidth] = useState(0.22);
-  const [centerSoftness, setCenterSoftness] = useState(0.1);
+  // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.4);
   const [bubbleSize, setBubbleSize] = useState(0.98);
   const [edgeTransition, setEdgeTransition] = useState(0.06);
@@ -122,7 +110,7 @@ export default function Home() {
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene screenZ={screenZ} edgeHarshness={edgeHarshness} edgeWidth={edgeWidth} centerSoftness={centerSoftness} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} />
+        <MainScene screenZ={screenZ} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} />
       </Canvas>
       
       {/* Debug Controls */}
@@ -131,15 +119,9 @@ export default function Home() {
         screenZ={screenZ}
         onHousingZChange={setHousingZ}
         onScreenZChange={setScreenZ}
-        edgeHarshness={edgeHarshness}
-        edgeWidth={edgeWidth}
-        centerSoftness={centerSoftness}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
-        onEdgeHarshnessChange={setEdgeHarshness}
-        onEdgeWidthChange={setEdgeWidth}
-        onCenterSoftnessChange={setCenterSoftness}
         onCornerRoundnessChange={setCornerRoundness}
         onBubbleSizeChange={setBubbleSize}
         onEdgeTransitionChange={setEdgeTransition}

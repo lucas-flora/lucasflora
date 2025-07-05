@@ -12,9 +12,6 @@ interface Monitor3DProps {
   marginRightPx: number;
   marginBottomPx: number;
   marginLeftPx: number;
-  edgeHarshness?: number;
-  edgeWidth?: number;
-  centerSoftness?: number;
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -53,9 +50,6 @@ export default function Monitor3D({
   marginRightPx, 
   marginBottomPx, 
   marginLeftPx,
-  edgeHarshness = 5.4,
-  edgeWidth = 0.22,
-  centerSoftness = 0.1,
   cornerRoundness = 0.4,
   bubbleSize = 0.98,
   edgeTransition = 0.06
@@ -269,10 +263,7 @@ export default function Monitor3D({
           width={dimensions.screenMeshWidth}
           height={dimensions.screenMeshHeight}
           yOffset={0}
-          debugMode={1}
-          edgeHarshness={edgeHarshness}
-          edgeWidth={edgeWidth}
-          centerSoftness={centerSoftness}
+          debugMode={0}
           cornerRoundness={cornerRoundness}
           bubbleSize={bubbleSize}
           edgeTransition={edgeTransition}

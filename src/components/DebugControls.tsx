@@ -7,15 +7,9 @@ interface DebugControlsProps {
   onScreenZChange: (z: number) => void;
   housingZ: number;
   screenZ: number;
-  onEdgeHarshnessChange: (value: number) => void;
-  onEdgeWidthChange: (value: number) => void;
-  onCenterSoftnessChange: (value: number) => void;
   onCornerRoundnessChange: (value: number) => void;
   onBubbleSizeChange: (value: number) => void;
   onEdgeTransitionChange: (value: number) => void;
-  edgeHarshness: number;
-  edgeWidth: number;
-  centerSoftness: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
@@ -26,15 +20,9 @@ export default function DebugControls({
   onScreenZChange, 
   housingZ, 
   screenZ,
-  onEdgeHarshnessChange,
-  onEdgeWidthChange,
-  onCenterSoftnessChange,
   onCornerRoundnessChange,
   onBubbleSizeChange,
   onEdgeTransitionChange,
-  edgeHarshness,
-  edgeWidth,
-  centerSoftness,
   cornerRoundness,
   bubbleSize,
   edgeTransition
@@ -93,51 +81,6 @@ export default function DebugControls({
             step={0.01}
             value={screenZ}
             onChange={(e) => onScreenZChange(parseFloat(e.target.value))}
-            className="w-full"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-xs text-gray-300 mb-1">
-            Edge Harshness: {edgeHarshness.toFixed(1)}
-          </label>
-          <input
-            type="range"
-            min={0.5}
-            max={8.0}
-            step={0.1}
-            value={edgeHarshness}
-            onChange={(e) => onEdgeHarshnessChange(parseFloat(e.target.value))}
-            className="w-full"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-xs text-gray-300 mb-1">
-            Edge Width: {edgeWidth.toFixed(2)}
-          </label>
-          <input
-            type="range"
-            min={0.05}
-            max={0.4}
-            step={0.01}
-            value={edgeWidth}
-            onChange={(e) => onEdgeWidthChange(parseFloat(e.target.value))}
-            className="w-full"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-xs text-gray-300 mb-1">
-            Center Softness: {centerSoftness.toFixed(1)}
-          </label>
-          <input
-            type="range"
-            min={0.1}
-            max={3.0}
-            step={0.1}
-            value={centerSoftness}
-            onChange={(e) => onCenterSoftnessChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

@@ -8,10 +8,7 @@ interface ScreenMeshProps {
   width: number;
   height: number;
   yOffset: number;
-  debugMode?: number; // 0 = normal, 1 = displacement map, 2 = scanlines
-  edgeHarshness?: number;
-  edgeWidth?: number;
-  centerSoftness?: number;
+  debugMode?: number; // 0 = normal, 1 = bubble map, 2 = scanlines, 3 = checkerboard
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -22,12 +19,9 @@ export default function ScreenMesh({
   height, 
   yOffset, 
   debugMode = 0,
-  edgeHarshness = 5.4,
-  edgeWidth = 0.22,
-  centerSoftness = 0.1,
-  cornerRoundness = 1.0,
-  bubbleSize = 0.8,
-  edgeTransition = 0.1
+  cornerRoundness = 0.4,
+  bubbleSize = 0.98,
+  edgeTransition = 0.06
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -46,9 +40,6 @@ export default function ScreenMesh({
     >
       <ScreenShaderMaterial 
         debugMode={debugMode}
-        edgeHarshness={edgeHarshness}
-        edgeWidth={edgeWidth}
-        centerSoftness={centerSoftness}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
