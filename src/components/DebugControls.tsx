@@ -7,13 +7,25 @@ interface DebugControlsProps {
   onScreenZChange: (z: number) => void;
   housingZ: number;
   screenZ: number;
+  onEdgeHarshnessChange: (value: number) => void;
+  onEdgeWidthChange: (value: number) => void;
+  onCenterSoftnessChange: (value: number) => void;
+  edgeHarshness: number;
+  edgeWidth: number;
+  centerSoftness: number;
 }
 
 export default function DebugControls({ 
   onHousingZChange, 
   onScreenZChange, 
   housingZ, 
-  screenZ
+  screenZ,
+  onEdgeHarshnessChange,
+  onEdgeWidthChange,
+  onCenterSoftnessChange,
+  edgeHarshness,
+  edgeWidth,
+  centerSoftness
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -69,6 +81,51 @@ export default function DebugControls({
             step={0.01}
             value={screenZ}
             onChange={(e) => onScreenZChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Edge Harshness: {edgeHarshness.toFixed(1)}
+          </label>
+          <input
+            type="range"
+            min={0.5}
+            max={8.0}
+            step={0.1}
+            value={edgeHarshness}
+            onChange={(e) => onEdgeHarshnessChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Edge Width: {edgeWidth.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.05}
+            max={0.4}
+            step={0.01}
+            value={edgeWidth}
+            onChange={(e) => onEdgeWidthChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Center Softness: {centerSoftness.toFixed(1)}
+          </label>
+          <input
+            type="range"
+            min={0.1}
+            max={3.0}
+            step={0.1}
+            value={centerSoftness}
+            onChange={(e) => onCenterSoftnessChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

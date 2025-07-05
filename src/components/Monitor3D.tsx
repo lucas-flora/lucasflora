@@ -12,6 +12,9 @@ interface Monitor3DProps {
   marginRightPx: number;
   marginBottomPx: number;
   marginLeftPx: number;
+  edgeHarshness?: number;
+  edgeWidth?: number;
+  centerSoftness?: number;
 }
 
 // Adjustable bump map intensity
@@ -41,7 +44,16 @@ function generateNoiseTexture(size = 128) {
   return texture;
 }
 
-export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx }: Monitor3DProps) {
+export default function Monitor3D({ 
+  screenZ = -0.05, 
+  marginTopPx, 
+  marginRightPx, 
+  marginBottomPx, 
+  marginLeftPx,
+  edgeHarshness = 3.0,
+  edgeWidth = 0.15,
+  centerSoftness = 0.8
+}: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
@@ -251,7 +263,10 @@ export default function Monitor3D({ screenZ = -0.05, marginTopPx, marginRightPx,
           width={dimensions.screenMeshWidth}
           height={dimensions.screenMeshHeight}
           yOffset={0}
-          debugMode={0}
+          debugMode={1}
+          edgeHarshness={edgeHarshness}
+          edgeWidth={edgeWidth}
+          centerSoftness={centerSoftness}
         />
       </group>
 

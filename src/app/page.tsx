@@ -30,7 +30,17 @@ const DebugControls = dynamic(() => import('../components/DebugControls'), {
 // Removed camera controller - using fixed camera position
 
 // Main 3D scene component
-function MainScene({screenZ }: { screenZ: number }) {
+function MainScene({
+  screenZ,
+  edgeHarshness,
+  edgeWidth,
+  centerSoftness
+}: { 
+  screenZ: number;
+  edgeHarshness: number;
+  edgeWidth: number;
+  centerSoftness: number;
+}) {
   // Margin values in pixels
   const marginTopPx = 24;
   const marginRightPx = 24;
@@ -44,6 +54,9 @@ function MainScene({screenZ }: { screenZ: number }) {
       marginRightPx={marginRightPx}
       marginBottomPx={marginBottomPx}
       marginLeftPx={marginLeftPx}
+      edgeHarshness={edgeHarshness}
+      edgeWidth={edgeWidth}
+      centerSoftness={centerSoftness}
     />
   );
 }
@@ -55,6 +68,11 @@ export default function Home() {
   // Debug positioning state (removed camera - using fixed position)
   const [housingZ, setHousingZ] = useState(-0.2);
   const [screenZ, setScreenZ] = useState(-0.05);
+  
+  // Displacement map parameters
+  const [edgeHarshness, setEdgeHarshness] = useState(3.0);
+  const [edgeWidth, setEdgeWidth] = useState(0.15);
+  const [centerSoftness, setCenterSoftness] = useState(0.8);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -92,7 +110,7 @@ export default function Home() {
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene screenZ={screenZ} />
+        <MainScene screenZ={screenZ} edgeHarshness={edgeHarshness} edgeWidth={edgeWidth} centerSoftness={centerSoftness} />
       </Canvas>
       
       {/* Debug Controls */}
@@ -101,6 +119,12 @@ export default function Home() {
         screenZ={screenZ}
         onHousingZChange={setHousingZ}
         onScreenZChange={setScreenZ}
+        edgeHarshness={edgeHarshness}
+        edgeWidth={edgeWidth}
+        centerSoftness={centerSoftness}
+        onEdgeHarshnessChange={setEdgeHarshness}
+        onEdgeWidthChange={setEdgeWidth}
+        onCenterSoftnessChange={setCenterSoftness}
       />
       
       {/* Terminal overlay for now - will be integrated into 3D scene later */}

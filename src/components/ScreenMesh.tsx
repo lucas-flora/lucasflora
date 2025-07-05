@@ -8,10 +8,21 @@ interface ScreenMeshProps {
   width: number;
   height: number;
   yOffset: number;
-  debugMode?: number; // 0 = normal, 1 = fresnel, 2 = scanlines
+  debugMode?: number; // 0 = normal, 1 = displacement map, 2 = scanlines
+  edgeHarshness?: number;
+  edgeWidth?: number;
+  centerSoftness?: number;
 }
 
-export default function ScreenMesh({ width, height, yOffset, debugMode = 0 }: ScreenMeshProps) {
+export default function ScreenMesh({ 
+  width, 
+  height, 
+  yOffset, 
+  debugMode = 0,
+  edgeHarshness = 2.0,
+  edgeWidth = 0.2,
+  centerSoftness = 0.5
+}: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   // Create flat plane geometry - no curvature for now
@@ -27,7 +38,12 @@ export default function ScreenMesh({ width, height, yOffset, debugMode = 0 }: Sc
       castShadow={false}
       receiveShadow={false}
     >
-      <ScreenShaderMaterial debugMode={debugMode} />
+      <ScreenShaderMaterial 
+        debugMode={debugMode}
+        edgeHarshness={edgeHarshness}
+        edgeWidth={edgeWidth}
+        centerSoftness={centerSoftness}
+      />
     </mesh>
   );
 } 
