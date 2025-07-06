@@ -71,14 +71,18 @@ varying vec2 vUv;
 
 uniform sampler2D screenTex;
 uniform float scanlineStrength;
+uniform float scanlineScale;
 uniform int debugMode;
 uniform float cornerRoundness;
 uniform float bubbleSize;
 uniform float edgeTransition;
+uniform float displacementAmount;
 
 // Scanline effect map generator
-float scanlineMap(vec2 uv, float strength) {
-  float yLine = floor(uv.y * 480.0);
+float scanlineMap(vec2 uv, float strength, float scale) {
+  // Use scale parameter to control line density
+  float yLine = floor(uv.y * scale);
+  // Make scanlines more pronounced - darken every other line significantly
   float dim = mod(yLine, 2.0) < 1.0 ? 1.0 - strength : 1.0;
   return dim;
 }
@@ -109,7 +113,7 @@ float checkerboardMap(vec2 uv, float squares) {
 void main() {
   // Generate maps
   float bubble = bubbleMap(vUv, mix(0.01, 0.3, cornerRoundness), bubbleSize, edgeTransition);
-  float scanlines = scanlineMap(vUv, scanlineStrength);
+  float scanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
   float checkerboard = checkerboardMap(vUv, 8.0);
   
   // Debug modes for viewing individual maps
@@ -125,19 +129,32 @@ void main() {
     // Show checkerboard map
     gl_FragColor = vec4(vec3(checkerboard), 1.0);
     return;
+  } else if (debugMode == 4) {
+    // Show white screen with scanlines for testing
+    vec3 white = vec3(1.0);
+    vec3 scannedWhite = white * scanlineMap(vUv, scanlineStrength, scanlineScale);
+    gl_FragColor = vec4(scannedWhite, 1.0);
+    return;
   }
 
-  // Normal rendering: apply effects and make emissive
+  // Normal rendering: build up effects in proper order
   vec3 baseColor = texture2D(screenTex, vUv).rgb;
   
-  // Apply scanlines to content
-  vec3 scanlinedColor = baseColor * scanlines;
+  // Apply content effects here (none for now)
+  vec3 contentColor = baseColor;
   
   // Make the screen emissive for bloom - boost brightness significantly
   // CRT screens are bright light sources, not just reflective surfaces
-  vec3 emissiveColor = scanlinedColor * 2.5; // Boost for bloom
+  vec3 emissiveColor = contentColor * 2.5; // Boost for bloom
   
-  gl_FragColor = vec4(emissiveColor, 1.0);
+  // Apply scanlines AFTER emissive boost - need much stronger effect for bright content
+  // Create more aggressive scanlines for the bright emissive content
+  float aggressiveScanlines = scanlineMap(vUv, scanlineStrength * 2.0, scanlineScale); // Double the strength
+  vec3 finalColor = emissiveColor * aggressiveScanlines;
+  
+  // Future effects like channel shifting or blur would go here
+  
+  gl_FragColor = vec4(finalColor, 1.0);
 }
 `;
 
@@ -146,6 +163,7 @@ extend({ ShaderMaterial });
 interface ScreenShaderMaterialProps {
   debugMode?: number;
   scanlineStrength?: number;
+  scanlineScale?: number;
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -156,7 +174,8 @@ interface ScreenShaderMaterialProps {
 
 export default function ScreenShaderMaterial({
   debugMode = 0,
-  scanlineStrength = 0.15,
+  scanlineStrength = 0.4,
+  scanlineScale = 800.0,
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
@@ -173,6 +192,7 @@ export default function ScreenShaderMaterial({
         uniforms: {
           screenTex: { value: testTexture || checkerboard },
           scanlineStrength: { value: scanlineStrength },
+          scanlineScale: { value: scanlineScale },
           debugMode: { value: debugMode },
           cornerRoundness: { value: cornerRoundness },
           bubbleSize: { value: bubbleSize },
@@ -183,11 +203,12 @@ export default function ScreenShaderMaterial({
         fragmentShader,
         toneMapped: false, // Allow bright values for bloom
       }),
-    [checkerboard, testTexture, scanlineStrength, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount]
+    [checkerboard, testTexture, scanlineStrength, scanlineScale, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount]
   );
 
   // Update uniforms on prop change
   material.uniforms.scanlineStrength.value = scanlineStrength;
+  material.uniforms.scanlineScale.value = scanlineScale;
   material.uniforms.debugMode.value = debugMode;
   material.uniforms.cornerRoundness.value = cornerRoundness;
   material.uniforms.bubbleSize.value = bubbleSize;

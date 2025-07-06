@@ -32,12 +32,16 @@ const DebugControls = dynamic(() => import('../components/DebugControls'), {
 // Main 3D scene component
 function MainScene({
   screenZ,
+  scanlineStrength,
+  scanlineScale,
   cornerRoundness,
   bubbleSize,
   edgeTransition,
   displacementAmount
 }: { 
   screenZ: number;
+  scanlineStrength: number;
+  scanlineScale: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
@@ -56,6 +60,8 @@ function MainScene({
       marginRightPx={marginRightPx}
       marginBottomPx={marginBottomPx}
       marginLeftPx={marginLeftPx}
+      scanlineStrength={scanlineStrength}
+      scanlineScale={scanlineScale}
       cornerRoundness={cornerRoundness}
       bubbleSize={bubbleSize}
       edgeTransition={edgeTransition}
@@ -77,6 +83,8 @@ export default function Home() {
   const [bubbleSize, setBubbleSize] = useState(0.99);
   const [edgeTransition, setEdgeTransition] = useState(0.15);
   const [displacementAmount, setDisplacementAmount] = useState(0.07);
+  const [scanlineStrength, setScanlineStrength] = useState(0.33);
+  const [scanlineScale, setScanlineScale] = useState(1200.0);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -114,7 +122,7 @@ export default function Home() {
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene screenZ={screenZ} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} displacementAmount={displacementAmount} />
+        <MainScene screenZ={screenZ} scanlineStrength={scanlineStrength} scanlineScale={scanlineScale} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} displacementAmount={displacementAmount} />
       </Canvas>
       
       {/* Debug Controls */}
@@ -123,10 +131,14 @@ export default function Home() {
         screenZ={screenZ}
         onHousingZChange={setHousingZ}
         onScreenZChange={setScreenZ}
+        scanlineStrength={scanlineStrength}
+        scanlineScale={scanlineScale}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
+        onScanlineStrengthChange={setScanlineStrength}
+        onScanlineScaleChange={setScanlineScale}
         onCornerRoundnessChange={setCornerRoundness}
         onBubbleSizeChange={setBubbleSize}
         onEdgeTransitionChange={setEdgeTransition}

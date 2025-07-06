@@ -7,10 +7,14 @@ interface DebugControlsProps {
   onScreenZChange: (z: number) => void;
   housingZ: number;
   screenZ: number;
+  onScanlineStrengthChange: (value: number) => void;
+  onScanlineScaleChange: (value: number) => void;
   onCornerRoundnessChange: (value: number) => void;
   onBubbleSizeChange: (value: number) => void;
   onEdgeTransitionChange: (value: number) => void;
   onDisplacementAmountChange: (value: number) => void;
+  scanlineStrength: number;
+  scanlineScale: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
@@ -22,10 +26,14 @@ export default function DebugControls({
   onScreenZChange, 
   housingZ, 
   screenZ,
+  onScanlineStrengthChange,
+  onScanlineScaleChange,
   onCornerRoundnessChange,
   onBubbleSizeChange,
   onEdgeTransitionChange,
   onDisplacementAmountChange,
+  scanlineStrength,
+  scanlineScale,
   cornerRoundness,
   bubbleSize,
   edgeTransition,
@@ -85,6 +93,36 @@ export default function DebugControls({
             step={0.01}
             value={screenZ}
             onChange={(e) => onScreenZChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Scanline Strength: {scanlineStrength.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={1.0}
+            step={0.01}
+            value={scanlineStrength}
+            onChange={(e) => onScanlineStrengthChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Scanline Scale: {scanlineScale.toFixed(0)}
+          </label>
+          <input
+            type="range"
+            min={100}
+            max={2000}
+            step={50}
+            value={scanlineScale}
+            onChange={(e) => onScanlineScaleChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

@@ -8,7 +8,9 @@ interface ScreenMeshProps {
   width: number;
   height: number;
   yOffset: number;
-  debugMode?: number; // 0 = normal, 1 = bubble map, 2 = scanlines, 3 = checkerboard
+  debugMode?: number; // 0 = normal, 1 = bubble map, 2 = scanlines, 3 = checkerboard, 4 = scanline test
+  scanlineStrength?: number;
+  scanlineScale?: number;
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -20,6 +22,8 @@ export default function ScreenMesh({
   height, 
   yOffset, 
   debugMode = 0,
+  scanlineStrength = 0.4,
+  scanlineScale = 800.0,
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
@@ -29,7 +33,7 @@ export default function ScreenMesh({
 
   // Create subdivided plane geometry for smooth displacement
   const subdivisionGeometry = useMemo(() => {
-    // Use enough subdivisions for smooth curves - 64x64 should be plenty
+    // Use enough subdivisions for smooth curves - 128x128 should be plenty
     const segments = 128;
     return new THREE.PlaneGeometry(width, height, segments, segments);
   }, [width, height]);
@@ -44,6 +48,8 @@ export default function ScreenMesh({
     >
       <ScreenShaderMaterial 
         debugMode={debugMode}
+        scanlineStrength={scanlineStrength}
+        scanlineScale={scanlineScale}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}

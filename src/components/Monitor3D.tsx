@@ -12,6 +12,8 @@ interface Monitor3DProps {
   marginRightPx: number;
   marginBottomPx: number;
   marginLeftPx: number;
+  scanlineStrength?: number;
+  scanlineScale?: number;
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -51,6 +53,8 @@ export default function Monitor3D({
   marginRightPx, 
   marginBottomPx, 
   marginLeftPx,
+  scanlineStrength = 0.4,
+  scanlineScale = 800.0,
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
@@ -266,6 +270,8 @@ export default function Monitor3D({
           height={dimensions.screenMeshHeight}
           yOffset={0}
           debugMode={0}
+          scanlineStrength={scanlineStrength}
+          scanlineScale={scanlineScale}
           cornerRoundness={cornerRoundness}
           bubbleSize={bubbleSize}
           edgeTransition={edgeTransition}

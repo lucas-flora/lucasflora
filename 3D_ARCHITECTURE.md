@@ -74,8 +74,8 @@ color.rgb *= dim;
 ⸻
 
 6. Scene & UX
-	•	Background: pitch-black or very dark gradient to focus attention on the monitor.
-	•	Camera: front-on orthographic or narrow-FOV perspective so the monitor fills most of the view.
+	• Monitor takes up entire view. Mostly with screen, and a certain amount given to the monitor housing
+	•	Camera: front-on orthographic or narrow-FOV perspective so the monitor fills entire view.
 	•	Interaction: capture key events only when the canvas is focused, so clicks/drags outside the screen can pan/rotate slightly if you add that later.
 	•	Contrast tuning: keep ambient light minimal so the text “pops”—your shader’s emissive intensity plus bloom should make the screen the brightest element.
 
