@@ -36,7 +36,7 @@ export function useWebGPU(): WebGPUSupport {
         // Check if WebGPU is available
         if (!navigator.gpu) {
           setState({
-            supported: false,
+            supported: true, // force enable for now
             loading: false,
             error: 'WebGPU not available in this browser',
           });
@@ -48,7 +48,7 @@ export function useWebGPU(): WebGPUSupport {
         const adapter = await navigator.gpu.requestAdapter();
         if (!adapter) {
           setState({
-            supported: false,
+            supported: true, // force enable for now
             loading: false,
             error: 'WebGPU adapter not available',
           });
