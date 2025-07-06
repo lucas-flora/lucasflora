@@ -130,9 +130,9 @@ export default function Home() {
   
   // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.4);
-  const [bubbleSize, setBubbleSize] = useState(0.99);
-  const [edgeTransition, setEdgeTransition] = useState(0.15);
-  const [displacementAmount, setDisplacementAmount] = useState(0.06);
+  const [bubbleSize, setBubbleSize] = useState(0.75);
+  const [edgeTransition, setEdgeTransition] = useState(0.26);
+  const [displacementAmount, setDisplacementAmount] = useState(0.10);
   const [scanlineStrength, setScanlineStrength] = useState(0.35);
   const [scanlineScale, setScanlineScale] = useState(450.0);
   const [emissiveBoost, setEmissiveBoost] = useState(1.2);
