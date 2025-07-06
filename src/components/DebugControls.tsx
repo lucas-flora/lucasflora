@@ -74,7 +74,7 @@ export default function DebugControls({
   onHideTerminalOverlayChange,
   onTerminalYOffsetChange
 }: DebugControlsProps) {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
 
   if (!isVisible) {
     return (

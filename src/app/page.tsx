@@ -125,20 +125,20 @@ export default function Home() {
   const [debugMode, setDebugMode] = useState(0);
   
   // Terminal display state
-  const [hideTerminalOverlay, setHideTerminalOverlay] = useState(false);
+  const [hideTerminalOverlay, setHideTerminalOverlay] = useState(true);
   const [terminalYOffset, setTerminalYOffset] = useState(100);
   
   // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.4);
   const [bubbleSize, setBubbleSize] = useState(0.99);
   const [edgeTransition, setEdgeTransition] = useState(0.15);
-  const [displacementAmount, setDisplacementAmount] = useState(0.07);
+  const [displacementAmount, setDisplacementAmount] = useState(0.06);
   const [scanlineStrength, setScanlineStrength] = useState(0.35);
-  const [scanlineScale, setScanlineScale] = useState(2000.0);
+  const [scanlineScale, setScanlineScale] = useState(450.0);
   const [emissiveBoost, setEmissiveBoost] = useState(1.2);
   
   // Bloom parameters - Better defaults for the new setup
-  const [bloomIntensity, setBloomIntensity] = useState(1.3);
+  const [bloomIntensity, setBloomIntensity] = useState(1.7);
   const [bloomKernelSize, setBloomKernelSize] = useState(3);
   const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.3);
