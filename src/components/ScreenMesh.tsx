@@ -15,6 +15,7 @@ interface ScreenMeshProps {
   bubbleSize?: number;
   edgeTransition?: number;
   displacementAmount?: number;
+  emissiveBoost?: number;
 }
 
 export default function ScreenMesh({ 
@@ -27,7 +28,8 @@ export default function ScreenMesh({
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
-  displacementAmount = 0.07
+  displacementAmount = 0.07,
+  emissiveBoost = 1.2
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -54,6 +56,7 @@ export default function ScreenMesh({
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
+        emissiveBoost={emissiveBoost}
       />
     </mesh>
   );

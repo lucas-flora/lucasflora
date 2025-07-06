@@ -18,6 +18,7 @@ interface Monitor3DProps {
   bubbleSize?: number;
   edgeTransition?: number;
   displacementAmount?: number;
+  emissiveBoost?: number;
 }
 
 // Adjustable bump map intensity
@@ -58,7 +59,8 @@ export default function Monitor3D({
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
-  displacementAmount = 0.07
+  displacementAmount = 0.07,
+  emissiveBoost = 1.2
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -192,7 +194,7 @@ export default function Monitor3D({
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture();
     return new THREE.MeshPhysicalMaterial({
-      color: '#717171', // beige
+      color: '#2a2a2a', // beige
       roughness: 0.45,
       metalness: 0.05,
       clearcoat: 0.05,
@@ -276,6 +278,7 @@ export default function Monitor3D({
           bubbleSize={bubbleSize}
           edgeTransition={edgeTransition}
           displacementAmount={displacementAmount}
+          emissiveBoost={emissiveBoost}
         />
       </group>
 
@@ -298,7 +301,7 @@ export default function Monitor3D({
           <meshPhysicalMaterial
             color="#fff0c7"
             emissive="#fff0c7"
-            emissiveIntensity={2.5}
+            emissiveIntensity={1.0}
             roughness={0.32}
             metalness={0.0}
             clearcoat={0.2}

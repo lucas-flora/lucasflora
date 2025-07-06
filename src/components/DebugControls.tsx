@@ -19,6 +19,17 @@ interface DebugControlsProps {
   bubbleSize: number;
   edgeTransition: number;
   displacementAmount: number;
+  emissiveBoost: number;
+  onEmissiveBoostChange: (value: number) => void;
+  // Bloom parameters
+  bloomIntensity: number;
+  bloomKernelSize: number;
+  bloomLuminanceThreshold: number;
+  bloomLuminanceSmoothing: number;
+  onBloomIntensityChange: (value: number) => void;
+  onBloomKernelSizeChange: (value: number) => void;
+  onBloomLuminanceThresholdChange: (value: number) => void;
+  onBloomLuminanceSmoothingChange: (value: number) => void;
 }
 
 export default function DebugControls({ 
@@ -37,7 +48,17 @@ export default function DebugControls({
   cornerRoundness,
   bubbleSize,
   edgeTransition,
-  displacementAmount
+  displacementAmount,
+  emissiveBoost,
+  onEmissiveBoostChange,
+  bloomIntensity,
+  bloomKernelSize,
+  bloomLuminanceThreshold,
+  bloomLuminanceSmoothing,
+  onBloomIntensityChange,
+  onBloomKernelSizeChange,
+  onBloomLuminanceThresholdChange,
+  onBloomLuminanceSmoothingChange
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -55,7 +76,7 @@ export default function DebugControls({
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 bg-black bg-opacity-80 text-white p-4 rounded-lg font-mono text-sm">
+    <div className="fixed top-4 right-4 z-50 bg-black bg-opacity-80 text-white p-4 rounded-lg font-mono text-sm max-h-screen overflow-y-auto">
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-bold">Debug Controls</h3>
         <button 
@@ -187,11 +208,89 @@ export default function DebugControls({
           />
         </div>
         
-        {/* Camera control removed - using fixed camera position */}
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Emissive Boost: {emissiveBoost.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.5}
+            max={3.0}
+            step={0.1}
+            value={emissiveBoost}
+            onChange={(e) => onEmissiveBoostChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div className="border-t border-gray-600 pt-3">
+          <h4 className="text-xs font-bold text-gray-300 mb-2">Bloom Post-Processing</h4>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Bloom Intensity: {bloomIntensity.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={5.0}
+              step={0.1}
+              value={bloomIntensity}
+              onChange={(e) => onBloomIntensityChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Bloom Kernel Size: {bloomKernelSize}
+            </label>
+            <input
+              type="range"
+              min={1}
+              max={7}
+              step={1}
+              value={bloomKernelSize}
+              onChange={(e) => onBloomKernelSizeChange(parseInt(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Luminance Threshold: {bloomLuminanceThreshold.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={10.0}
+              step={0.05}
+              value={bloomLuminanceThreshold}
+              onChange={(e) => onBloomLuminanceThresholdChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Luminance Smoothing: {bloomLuminanceSmoothing.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={bloomLuminanceSmoothing}
+              onChange={(e) => onBloomLuminanceSmoothingChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        </div>
         
         <div className="text-xs text-gray-400 mt-2">
           <div>Housing front should be closest to camera</div>
           <div>Screen should be recessed into housing</div>
+          <div>Bloom enhances bright screen content</div>
         </div>
       </div>
     </div>

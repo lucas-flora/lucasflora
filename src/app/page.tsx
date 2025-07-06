@@ -22,6 +22,14 @@ const Monitor3D = dynamic(() => import('../components/Monitor3D'), {
   ssr: false,
 });
 
+// Dynamically import post-processing components
+const EffectComposer = dynamic(() => import('@react-three/postprocessing').then(mod => ({ default: mod.EffectComposer })), {
+  ssr: false,
+});
+
+const Bloom = dynamic(() => import('@react-three/postprocessing').then(mod => ({ default: mod.Bloom })), {
+  ssr: false,
+});
 
 const DebugControls = dynamic(() => import('../components/DebugControls'), {
   ssr: false,
@@ -37,7 +45,12 @@ function MainScene({
   cornerRoundness,
   bubbleSize,
   edgeTransition,
-  displacementAmount
+  displacementAmount,
+  emissiveBoost,
+  bloomIntensity,
+  bloomKernelSize,
+  bloomLuminanceThreshold,
+  bloomLuminanceSmoothing
 }: { 
   screenZ: number;
   scanlineStrength: number;
@@ -46,6 +59,11 @@ function MainScene({
   bubbleSize: number;
   edgeTransition: number;
   displacementAmount: number;
+  emissiveBoost: number;
+  bloomIntensity: number;
+  bloomKernelSize: number;
+  bloomLuminanceThreshold: number;
+  bloomLuminanceSmoothing: number;
 }) {
   // Margin values in pixels
   const marginTopPx = 24;
@@ -54,19 +72,32 @@ function MainScene({
   const marginLeftPx = 24;
 
   return (
-    <Monitor3D
-      screenZ={screenZ}
-      marginTopPx={marginTopPx}
-      marginRightPx={marginRightPx}
-      marginBottomPx={marginBottomPx}
-      marginLeftPx={marginLeftPx}
-      scanlineStrength={scanlineStrength}
-      scanlineScale={scanlineScale}
-      cornerRoundness={cornerRoundness}
-      bubbleSize={bubbleSize}
-      edgeTransition={edgeTransition}
-      displacementAmount={displacementAmount}
-    />
+    <>
+      <Monitor3D
+        screenZ={screenZ}
+        marginTopPx={marginTopPx}
+        marginRightPx={marginRightPx}
+        marginBottomPx={marginBottomPx}
+        marginLeftPx={marginLeftPx}
+        scanlineStrength={scanlineStrength}
+        scanlineScale={scanlineScale}
+        cornerRoundness={cornerRoundness}
+        bubbleSize={bubbleSize}
+        edgeTransition={edgeTransition}
+        displacementAmount={displacementAmount}
+        emissiveBoost={emissiveBoost}
+      />
+      
+      {/* Post-processing chain */}
+      <EffectComposer>
+        <Bloom
+          intensity={bloomIntensity}
+          kernelSize={bloomKernelSize}
+          luminanceThreshold={bloomLuminanceThreshold}
+          luminanceSmoothing={bloomLuminanceSmoothing}
+        />
+      </EffectComposer>
+    </>
   );
 }
 
@@ -85,6 +116,13 @@ export default function Home() {
   const [displacementAmount, setDisplacementAmount] = useState(0.07);
   const [scanlineStrength, setScanlineStrength] = useState(0.33);
   const [scanlineScale, setScanlineScale] = useState(1200.0);
+  const [emissiveBoost, setEmissiveBoost] = useState(1.0);
+  
+  // Bloom parameters - Better defaults for the new setup
+  const [bloomIntensity, setBloomIntensity] = useState(1.3);
+  const [bloomKernelSize, setBloomKernelSize] = useState(3);
+  const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.9);
+  const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.3);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -122,7 +160,20 @@ export default function Home() {
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene screenZ={screenZ} scanlineStrength={scanlineStrength} scanlineScale={scanlineScale} cornerRoundness={cornerRoundness} bubbleSize={bubbleSize} edgeTransition={edgeTransition} displacementAmount={displacementAmount} />
+        <MainScene 
+          screenZ={screenZ} 
+          scanlineStrength={scanlineStrength} 
+          scanlineScale={scanlineScale} 
+          cornerRoundness={cornerRoundness} 
+          bubbleSize={bubbleSize} 
+          edgeTransition={edgeTransition} 
+          displacementAmount={displacementAmount}
+          emissiveBoost={emissiveBoost}
+          bloomIntensity={bloomIntensity}
+          bloomKernelSize={bloomKernelSize}
+          bloomLuminanceThreshold={bloomLuminanceThreshold}
+          bloomLuminanceSmoothing={bloomLuminanceSmoothing}
+        />
       </Canvas>
       
       {/* Debug Controls */}
@@ -137,12 +188,22 @@ export default function Home() {
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
+        emissiveBoost={emissiveBoost}
         onScanlineStrengthChange={setScanlineStrength}
         onScanlineScaleChange={setScanlineScale}
         onCornerRoundnessChange={setCornerRoundness}
         onBubbleSizeChange={setBubbleSize}
         onEdgeTransitionChange={setEdgeTransition}
         onDisplacementAmountChange={setDisplacementAmount}
+        onEmissiveBoostChange={setEmissiveBoost}
+        bloomIntensity={bloomIntensity}
+        bloomKernelSize={bloomKernelSize}
+        bloomLuminanceThreshold={bloomLuminanceThreshold}
+        bloomLuminanceSmoothing={bloomLuminanceSmoothing}
+        onBloomIntensityChange={setBloomIntensity}
+        onBloomKernelSizeChange={setBloomKernelSize}
+        onBloomLuminanceThresholdChange={setBloomLuminanceThreshold}
+        onBloomLuminanceSmoothingChange={setBloomLuminanceSmoothing}
       />
       
       {/* Terminal overlay for now - will be integrated into 3D scene later */}

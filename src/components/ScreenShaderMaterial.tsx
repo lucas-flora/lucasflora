@@ -77,6 +77,7 @@ uniform float cornerRoundness;
 uniform float bubbleSize;
 uniform float edgeTransition;
 uniform float displacementAmount;
+uniform float emissiveBoost;
 
 // Scanline effect map generator
 float scanlineMap(vec2 uv, float strength, float scale) {
@@ -143,14 +144,14 @@ void main() {
   // Apply content effects here (none for now)
   vec3 contentColor = baseColor;
   
-  // Make the screen emissive for bloom - boost brightness significantly
+  // Make the screen emissive for bloom - configurable boost
   // CRT screens are bright light sources, not just reflective surfaces
-  vec3 emissiveColor = contentColor * 2.5; // Boost for bloom
+  vec3 emissiveColor = contentColor * emissiveBoost; // Configurable boost for bloom
   
-  // Apply scanlines AFTER emissive boost - need much stronger effect for bright content
-  // Create more aggressive scanlines for the bright emissive content
-  float aggressiveScanlines = scanlineMap(vUv, scanlineStrength * 2.0, scanlineScale); // Double the strength
-  vec3 finalColor = emissiveColor * aggressiveScanlines;
+  // Apply scanlines AFTER emissive boost - but don't double the strength anymore
+  // More reasonable scanline application
+  float finalScanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
+  vec3 finalColor = emissiveColor * finalScanlines;
   
   // Future effects like channel shifting or blur would go here
   
@@ -168,6 +169,7 @@ interface ScreenShaderMaterialProps {
   bubbleSize?: number;
   edgeTransition?: number;
   displacementAmount?: number;
+  emissiveBoost?: number;
   testTexture?: Texture;
   [key: string]: unknown;
 }
@@ -180,6 +182,7 @@ export default function ScreenShaderMaterial({
   bubbleSize = 0.99,
   edgeTransition = 0.15,
   displacementAmount = 0.07,
+  emissiveBoost = 1.2,
   testTexture,
   ...props
 }: ScreenShaderMaterialProps) {
@@ -198,12 +201,13 @@ export default function ScreenShaderMaterial({
           bubbleSize: { value: bubbleSize },
           edgeTransition: { value: edgeTransition },
           displacementAmount: { value: displacementAmount },
+          emissiveBoost: { value: emissiveBoost },
         },
         vertexShader,
         fragmentShader,
         toneMapped: false, // Allow bright values for bloom
       }),
-    [checkerboard, testTexture, scanlineStrength, scanlineScale, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount]
+    [checkerboard, testTexture, scanlineStrength, scanlineScale, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount, emissiveBoost]
   );
 
   // Update uniforms on prop change
@@ -214,6 +218,7 @@ export default function ScreenShaderMaterial({
   material.uniforms.bubbleSize.value = bubbleSize;
   material.uniforms.edgeTransition.value = edgeTransition;
   material.uniforms.displacementAmount.value = displacementAmount;
+  material.uniforms.emissiveBoost.value = emissiveBoost;
   if (testTexture) material.uniforms.screenTex.value = testTexture;
 
   return <primitive object={material} attach="material" {...props} />;
