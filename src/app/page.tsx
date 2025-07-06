@@ -50,7 +50,11 @@ function MainScene({
   bloomIntensity,
   bloomKernelSize,
   bloomLuminanceThreshold,
-  bloomLuminanceSmoothing
+  bloomLuminanceSmoothing,
+  terminalEntries,
+  currentInput,
+  isTyping,
+  debugMode
 }: { 
   screenZ: number;
   scanlineStrength: number;
@@ -64,12 +68,16 @@ function MainScene({
   bloomKernelSize: number;
   bloomLuminanceThreshold: number;
   bloomLuminanceSmoothing: number;
+  terminalEntries: TerminalEntry[];
+  currentInput: string;
+  isTyping: boolean;
+  debugMode: number;
 }) {
   // Margin values in pixels
-  const marginTopPx = 24;
-  const marginRightPx = 24;
-  const marginBottomPx = 42;
-  const marginLeftPx = 24;
+  const marginTopPx = 48;
+  const marginRightPx = 48;
+  const marginBottomPx = 72;
+  const marginLeftPx = 48;
 
   return (
     <>
@@ -86,6 +94,10 @@ function MainScene({
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
         emissiveBoost={emissiveBoost}
+        terminalEntries={terminalEntries}
+        currentInput={currentInput}
+        isTyping={isTyping}
+        debugMode={debugMode}
       />
       
       {/* Post-processing chain */}
@@ -103,25 +115,32 @@ function MainScene({
 
 export default function Home() {
   const [entries, setEntries] = useState<TerminalEntry[]>([]);
+  const [currentInput, setCurrentInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const { supported: webGPUSupported, loading: webGPULoading } = useWebGPU();
   
   // Debug positioning state (removed camera - using fixed position)
   const [housingZ, setHousingZ] = useState(-0.2);
   const [screenZ, setScreenZ] = useState(-0.05);
+  const [debugMode, setDebugMode] = useState(0);
+  
+  // Terminal display state
+  const [hideTerminalOverlay, setHideTerminalOverlay] = useState(false);
+  const [terminalYOffset, setTerminalYOffset] = useState(100);
   
   // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.4);
   const [bubbleSize, setBubbleSize] = useState(0.99);
   const [edgeTransition, setEdgeTransition] = useState(0.15);
   const [displacementAmount, setDisplacementAmount] = useState(0.07);
-  const [scanlineStrength, setScanlineStrength] = useState(0.33);
-  const [scanlineScale, setScanlineScale] = useState(1200.0);
-  const [emissiveBoost, setEmissiveBoost] = useState(1.0);
+  const [scanlineStrength, setScanlineStrength] = useState(0.35);
+  const [scanlineScale, setScanlineScale] = useState(2000.0);
+  const [emissiveBoost, setEmissiveBoost] = useState(1.2);
   
   // Bloom parameters - Better defaults for the new setup
   const [bloomIntensity, setBloomIntensity] = useState(1.3);
   const [bloomKernelSize, setBloomKernelSize] = useState(3);
-  const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.9);
+  const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.3);
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
@@ -173,6 +192,10 @@ export default function Home() {
           bloomKernelSize={bloomKernelSize}
           bloomLuminanceThreshold={bloomLuminanceThreshold}
           bloomLuminanceSmoothing={bloomLuminanceSmoothing}
+          terminalEntries={entries}
+          currentInput={currentInput}
+          isTyping={isTyping}
+          debugMode={debugMode}
         />
       </Canvas>
       
@@ -196,6 +219,8 @@ export default function Home() {
         onEdgeTransitionChange={setEdgeTransition}
         onDisplacementAmountChange={setDisplacementAmount}
         onEmissiveBoostChange={setEmissiveBoost}
+        debugMode={debugMode}
+        onDebugModeChange={setDebugMode}
         bloomIntensity={bloomIntensity}
         bloomKernelSize={bloomKernelSize}
         bloomLuminanceThreshold={bloomLuminanceThreshold}
@@ -204,12 +229,22 @@ export default function Home() {
         onBloomKernelSizeChange={setBloomKernelSize}
         onBloomLuminanceThresholdChange={setBloomLuminanceThreshold}
         onBloomLuminanceSmoothingChange={setBloomLuminanceSmoothing}
+        hideTerminalOverlay={hideTerminalOverlay}
+        terminalYOffset={terminalYOffset}
+        onHideTerminalOverlayChange={setHideTerminalOverlay}
+        onTerminalYOffsetChange={setTerminalYOffset}
       />
       
-      {/* Terminal overlay for now - will be integrated into 3D scene later */}
+      {/* Terminal overlay - now with visibility control */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
         <div className="pointer-events-auto">
-          <TerminalController onEntriesChange={handleEntriesChange} />
+          <TerminalController 
+            onEntriesChange={handleEntriesChange} 
+            onCurrentInputChange={setCurrentInput}
+            onTypingStateChange={setIsTyping}
+            hideVisualContent={hideTerminalOverlay}
+            yOffset={terminalYOffset}
+          />
         </div>
       </div>
     </div>

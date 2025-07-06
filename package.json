@@ -12,6 +12,7 @@
     "@react-three/drei": "^10.4.2",
     "@react-three/fiber": "^9.1.4",
     "@react-three/postprocessing": "^3.0.4",
+    "html2canvas": "^1.4.1",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

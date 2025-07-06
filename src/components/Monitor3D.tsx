@@ -5,6 +5,8 @@ import ScreenMesh from './ScreenMesh';
 // import { RoundedBox } from '@react-three/drei'; // Not needed for frame-based housing
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from '@react-three/drei';
+import { TerminalEntry } from '../lib/terminal-types';
+import { useTerminalCanvas } from '../utils/useTerminalCanvas';
 
 interface Monitor3DProps {
   screenZ?: number;
@@ -19,6 +21,10 @@ interface Monitor3DProps {
   edgeTransition?: number;
   displacementAmount?: number;
   emissiveBoost?: number;
+  terminalEntries?: TerminalEntry[];
+  currentInput?: string;
+  isTyping?: boolean;
+  debugMode?: number;
 }
 
 // Adjustable bump map intensity
@@ -60,10 +66,30 @@ export default function Monitor3D({
   bubbleSize = 0.99,
   edgeTransition = 0.15,
   displacementAmount = 0.07,
-  emissiveBoost = 1.2
+  emissiveBoost = 1.2,
+  terminalEntries = [],
+  currentInput = '',
+  isTyping = false,
+  debugMode = 0
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  
+  // Generate terminal texture using canvas rendering
+  // Match the exact CSS styling from TerminalController
+  const terminalTexture = useTerminalCanvas(terminalEntries, {
+    width: 1024,
+    height: 768,
+    backgroundColor: '#000000',
+    textColor: '#ffffff',
+    fontSize: 16, // Match typical browser monospace font size
+    fontFamily: 'monospace',
+    lineHeight: 1.2, // Tighter line height to match CSS
+    padding: 16, // p-4 in Tailwind = 16px, not 24px
+    spaceBetweenEntries: 4, // space-y-1 in Tailwind = 4px, not full line height
+    currentInput,
+    isTyping
+  });
 
   // Listen for window resize events
   useEffect(() => {
@@ -171,7 +197,7 @@ export default function Monitor3D({
     
     // LED offsets in pixels
     const ledRightPx = 48;
-    const ledBottomPx = 24;
+    const ledBottomPx = 48;
     const ledRightWorld = unitsPerPixelX * ledRightPx;
     const ledBottomWorld = unitsPerPixelY * ledBottomPx;
 
@@ -271,7 +297,7 @@ export default function Monitor3D({
           width={dimensions.screenMeshWidth}
           height={dimensions.screenMeshHeight}
           yOffset={0}
-          debugMode={0}
+          debugMode={debugMode}
           scanlineStrength={scanlineStrength}
           scanlineScale={scanlineScale}
           cornerRoundness={cornerRoundness}
@@ -279,6 +305,7 @@ export default function Monitor3D({
           edgeTransition={edgeTransition}
           displacementAmount={displacementAmount}
           emissiveBoost={emissiveBoost}
+          terminalTexture={terminalTexture}
         />
       </group>
 

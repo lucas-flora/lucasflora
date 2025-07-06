@@ -16,6 +16,7 @@ interface ScreenMeshProps {
   edgeTransition?: number;
   displacementAmount?: number;
   emissiveBoost?: number;
+  terminalTexture?: THREE.Texture | null;
 }
 
 export default function ScreenMesh({ 
@@ -29,7 +30,8 @@ export default function ScreenMesh({
   bubbleSize = 0.99,
   edgeTransition = 0.15,
   displacementAmount = 0.07,
-  emissiveBoost = 1.2
+  emissiveBoost = 1.2,
+  terminalTexture
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -57,6 +59,7 @@ export default function ScreenMesh({
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
         emissiveBoost={emissiveBoost}
+        terminalTexture={terminalTexture || undefined}
       />
     </mesh>
   );

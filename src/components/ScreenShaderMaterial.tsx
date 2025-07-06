@@ -112,22 +112,20 @@ float checkerboardMap(vec2 uv, float squares) {
 }
 
 void main() {
-  // Generate maps
-  float bubble = bubbleMap(vUv, mix(0.01, 0.3, cornerRoundness), bubbleSize, edgeTransition);
-  float scanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
-  float checkerboard = checkerboardMap(vUv, 8.0);
-  
   // Debug modes for viewing individual maps
   if (debugMode == 1) {
-    // Show bubble map
+    // Show bubble map (only calculate when needed)
+    float bubble = bubbleMap(vUv, mix(0.01, 0.3, cornerRoundness), bubbleSize, edgeTransition);
     gl_FragColor = vec4(vec3(bubble), 1.0);
     return;
   } else if (debugMode == 2) {
     // Show scanline map
+    float scanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
     gl_FragColor = vec4(vec3(scanlines), 1.0);
     return;
   } else if (debugMode == 3) {
     // Show checkerboard map
+    float checkerboard = checkerboardMap(vUv, 8.0);
     gl_FragColor = vec4(vec3(checkerboard), 1.0);
     return;
   } else if (debugMode == 4) {
@@ -148,8 +146,8 @@ void main() {
   // CRT screens are bright light sources, not just reflective surfaces
   vec3 emissiveColor = contentColor * emissiveBoost; // Configurable boost for bloom
   
-  // Apply scanlines AFTER emissive boost - but don't double the strength anymore
-  // More reasonable scanline application
+  // Apply scanlines AFTER emissive boost - calculated fresh for normal rendering
+  // Use original UV coordinates for straight scanlines regardless of geometry displacement
   float finalScanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
   vec3 finalColor = emissiveColor * finalScanlines;
   
@@ -171,6 +169,7 @@ interface ScreenShaderMaterialProps {
   displacementAmount?: number;
   emissiveBoost?: number;
   testTexture?: Texture;
+  terminalTexture?: Texture | null;
   [key: string]: unknown;
 }
 
@@ -184,6 +183,7 @@ export default function ScreenShaderMaterial({
   displacementAmount = 0.07,
   emissiveBoost = 1.2,
   testTexture,
+  terminalTexture,
   ...props
 }: ScreenShaderMaterialProps) {
   // Use a static checkerboard texture for now
@@ -193,7 +193,7 @@ export default function ScreenShaderMaterial({
     () =>
       new ShaderMaterial({
         uniforms: {
-          screenTex: { value: testTexture || checkerboard },
+          screenTex: { value: terminalTexture || testTexture || checkerboard },
           scanlineStrength: { value: scanlineStrength },
           scanlineScale: { value: scanlineScale },
           debugMode: { value: debugMode },
@@ -207,7 +207,7 @@ export default function ScreenShaderMaterial({
         fragmentShader,
         toneMapped: false, // Allow bright values for bloom
       }),
-    [checkerboard, testTexture, scanlineStrength, scanlineScale, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount, emissiveBoost]
+    [checkerboard, testTexture, terminalTexture, scanlineStrength, scanlineScale, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount, emissiveBoost]
   );
 
   // Update uniforms on prop change
@@ -219,7 +219,15 @@ export default function ScreenShaderMaterial({
   material.uniforms.edgeTransition.value = edgeTransition;
   material.uniforms.displacementAmount.value = displacementAmount;
   material.uniforms.emissiveBoost.value = emissiveBoost;
-  if (testTexture) material.uniforms.screenTex.value = testTexture;
+  
+  // Update texture - priority: terminalTexture > testTexture > checkerboard
+  if (terminalTexture) {
+    material.uniforms.screenTex.value = terminalTexture;
+  } else if (testTexture) {
+    material.uniforms.screenTex.value = testTexture;
+  } else {
+    material.uniforms.screenTex.value = checkerboard;
+  }
 
   return <primitive object={material} attach="material" {...props} />;
 } 

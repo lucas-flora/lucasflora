@@ -21,6 +21,9 @@ interface DebugControlsProps {
   displacementAmount: number;
   emissiveBoost: number;
   onEmissiveBoostChange: (value: number) => void;
+  // Debug mode
+  debugMode: number;
+  onDebugModeChange: (value: number) => void;
   // Bloom parameters
   bloomIntensity: number;
   bloomKernelSize: number;
@@ -30,6 +33,11 @@ interface DebugControlsProps {
   onBloomKernelSizeChange: (value: number) => void;
   onBloomLuminanceThresholdChange: (value: number) => void;
   onBloomLuminanceSmoothingChange: (value: number) => void;
+  // Terminal overlay controls
+  hideTerminalOverlay: boolean;
+  terminalYOffset: number;
+  onHideTerminalOverlayChange: (value: boolean) => void;
+  onTerminalYOffsetChange: (value: number) => void;
 }
 
 export default function DebugControls({ 
@@ -51,6 +59,8 @@ export default function DebugControls({
   displacementAmount,
   emissiveBoost,
   onEmissiveBoostChange,
+  debugMode,
+  onDebugModeChange,
   bloomIntensity,
   bloomKernelSize,
   bloomLuminanceThreshold,
@@ -58,7 +68,11 @@ export default function DebugControls({
   onBloomIntensityChange,
   onBloomKernelSizeChange,
   onBloomLuminanceThresholdChange,
-  onBloomLuminanceSmoothingChange
+  onBloomLuminanceSmoothingChange,
+  hideTerminalOverlay,
+  terminalYOffset,
+  onHideTerminalOverlayChange,
+  onTerminalYOffsetChange
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -114,6 +128,21 @@ export default function DebugControls({
             step={0.01}
             value={screenZ}
             onChange={(e) => onScreenZChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Debug Mode: {debugMode === 0 ? 'Terminal' : debugMode === 1 ? 'Bubble Map' : debugMode === 2 ? 'Scanlines' : debugMode === 3 ? 'Checkerboard' : 'Scanline Test'}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={4}
+            step={1}
+            value={debugMode}
+            onChange={(e) => onDebugModeChange(parseInt(e.target.value))}
             className="w-full"
           />
         </div>
@@ -287,10 +316,42 @@ export default function DebugControls({
           </div>
         </div>
         
+        <div className="border-t border-gray-600 pt-3">
+          <h4 className="text-xs font-bold text-gray-300 mb-2">Terminal Overlay</h4>
+          
+          <div>
+            <label className="flex items-center space-x-2 mb-2">
+              <input
+                type="checkbox"
+                checked={hideTerminalOverlay}
+                onChange={(e) => onHideTerminalOverlayChange(e.target.checked)}
+                className="form-checkbox"
+              />
+              <span className="text-xs text-gray-300">Hide Terminal Overlay</span>
+            </label>
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Y Offset: {terminalYOffset}px
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={400}
+              step={1}
+              value={terminalYOffset}
+              onChange={(e) => onTerminalYOffsetChange(parseInt(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        </div>
+        
         <div className="text-xs text-gray-400 mt-2">
           <div>Housing front should be closest to camera</div>
           <div>Screen should be recessed into housing</div>
           <div>Bloom enhances bright screen content</div>
+          <div>Hide overlay to rely on 3D terminal texture</div>
         </div>
       </div>
     </div>
