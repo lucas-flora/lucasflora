@@ -142,9 +142,14 @@ void main() {
   // Apply content effects here (none for now)
   vec3 contentColor = baseColor;
   
+  // Add subtle monitor glow - slight gray background instead of pure black
+  // This simulates the phosphor coating glow that CRT monitors have
+  vec3 monitorGlow = vec3(0.007, 0.007, 0.005); // Subtle cool gray-blue tint
+  vec3 glowColor = max(contentColor, monitorGlow);
+  
   // Make the screen emissive for bloom - configurable boost
   // CRT screens are bright light sources, not just reflective surfaces
-  vec3 emissiveColor = contentColor * emissiveBoost; // Configurable boost for bloom
+  vec3 emissiveColor = glowColor * emissiveBoost; // Configurable boost for bloom
   
   // Apply scanlines AFTER emissive boost - calculated fresh for normal rendering
   // Use original UV coordinates for straight scanlines regardless of geometry displacement
