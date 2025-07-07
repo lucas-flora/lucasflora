@@ -1,12 +1,15 @@
 'use client';
 
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
+import { useThree } from '@react-three/fiber';
+import { PerspectiveCamera } from 'three';
 import ScreenMesh from './ScreenMesh';
-// import { RoundedBox } from '@react-three/drei'; // Not needed for frame-based housing
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from '@react-three/drei';
 import { TerminalEntry } from '../lib/terminal-types';
 import { useTerminalCanvas } from '../utils/useTerminalCanvas';
+// Fixed thickness of monitor housing (front face to back)
+const HOUSING_DEPTH = 0.3;
 
 interface Monitor3DProps {
   screenZ?: number;
@@ -73,154 +76,51 @@ export default function Monitor3D({
   debugMode = 0
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
+
+  // Track window size for world-unit calculation
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  
-  // Generate terminal texture using canvas rendering
-  // Match the exact CSS styling from TerminalController
-  const terminalTexture = useTerminalCanvas(terminalEntries, {
-    width: 1024,
-    height: 768,
-    backgroundColor: '#000000',
-    textColor: '#ffffff',
-    fontSize: 16, // Match typical browser monospace font size
-    fontFamily: 'monospace',
-    lineHeight: 1.2, // Tighter line height to match CSS
-    padding: 16, // p-4 in Tailwind = 16px, not 24px
-    spaceBetweenEntries: 4, // space-y-1 in Tailwind = 4px, not full line height
-    currentInput,
-    isTyping
-  });
-
-  // Listen for window resize events
   useEffect(() => {
-    const updateWindowSize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    
-    // Set initial size
-    updateWindowSize();
-    
-    // Add resize listener
-    window.addEventListener('resize', updateWindowSize);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', updateWindowSize);
+    const onResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
-  
-  // Dimensions based on WINDOW size - RESPONSIVE to window changes
-  const dimensions = useMemo(() => {
-    if (windowSize.width === 0) {
-      // Default until ready
-      return {
-        screen: { width: 4, height: 3 },
-        housing: { width: 4.32, height: 3.24, depth: 0.4 },
-        bezel: { thickness: 0.08, depth: 0.08 },
-        radius: 0.1,
-        frame: { left: 0.1, right: 0.1, top: 0.15, bottom: 0.25 },
-        topFrameY: 1.5 - 0.15 / 2, // (visibleHeight/2) - (topFrameHeight/2) for default
-        bottomFrameY: -1.5 + 0.25 / 2, // -(visibleHeight/2) + (bottomFrameHeight/2) for default
-        screenYOffset: 0,
-        led: { x: 1, y: -1, z: 0 },
-        unitsPerPixel: 1,
-        screenMeshWidth: 4, // match default screen width
-        screenMeshHeight: 3, // match default screen height
-      };
-    }
-    
-    // Get window aspect ratio (not camera-dependent)
-    const windowAspectRatio = windowSize.width / windowSize.height;
-    
-    // Camera parameters (must match <Canvas camera={...} />)
-    const cameraZ = 2.6;           // Distance of camera from origin (z-axis)
-    const cameraFovDeg = 50;       // Vertical FOV in degrees – keep in sync with page.tsx
 
-    // Vertical size of the view frustum at the Z depth of the screen
-    const zDistance = cameraZ - screenZ; // screenZ is slightly negative, so distance > cameraZ
-    const verticalFovRad = THREE.MathUtils.degToRad(cameraFovDeg);
-    const visibleHeight = 2 * zDistance * Math.tan(verticalFovRad / 2);
-    const visibleWidth  = visibleHeight * windowAspectRatio;
+  // Compute world-units-per-CSS-pixel at the front face depth
+  const { camera: genericCamera } = useThree();
+  const camera = genericCamera as PerspectiveCamera;
+  const fovRad = (camera.fov * Math.PI) / 180;
+  // distance from camera to enclosure front face at Z=0
+  const dist = camera.position.z;
+  // world units per CSS pixel so geometry will fill view
+  const worldPx = (2 * dist * Math.tan(fovRad / 2)) / windowSize.height;
 
-    // World units per pixel at this camera setup
-    const unitsPerPixelY = visibleHeight / windowSize.height;
-    const unitsPerPixelX = visibleWidth / windowSize.width;
-    const marginTopWorld = unitsPerPixelY * marginTopPx;
-    const marginRightWorld = unitsPerPixelX * marginRightPx;
-    const marginBottomWorld = unitsPerPixelY * marginBottomPx;
-    const marginLeftWorld = unitsPerPixelX * marginLeftPx;
+  const screenWorldWidth  = (windowSize.width  - marginLeftPx - marginRightPx) * worldPx;
+  const screenWorldHeight = (windowSize.height - marginTopPx  - marginBottomPx) * worldPx;
+  const frameLeft   = marginLeftPx   * worldPx;
+  const frameRight  = marginRightPx  * worldPx;
+  const frameTop    = marginTopPx    * worldPx;
+  const frameBottom = marginBottomPx * worldPx;
 
-    // Move fudge and mesh size calculation outside useMemo so they are in scope for render
-    const fudgeW = 0.05;
-    const fudgeH = 0.05;
+  // Center offsets so inner edges align with margins
+  const xOffset = (frameRight - frameLeft) / 2;
+  const yOffset = (frameBottom - frameTop) / 2;
 
-    // Calculate screen size WITHOUT fudge for frame/housing
-    const screenWidth = visibleWidth - marginLeftWorld - marginRightWorld;
-    const screenHeight = visibleHeight - marginTopWorld - marginBottomWorld;
+  // Mesh dimensions: add slight padding if desired
+  const screenMeshWidth = screenWorldWidth + 0.01;
+  const screenMeshHeight = screenWorldHeight + 0.01;
 
-    // Use these for the mesh only
-    const screenMeshWidth = screenWidth + fudgeW;
-    const screenMeshHeight = screenHeight + fudgeH;
-
-    // Debugging output
-    console.log('[Monitor3D] visibleWidth:', visibleWidth, 'visibleHeight:', visibleHeight);
-    console.log('[Monitor3D] marginLeftWorld:', marginLeftWorld, 'marginRightWorld:', marginRightWorld, 'marginTopWorld:', marginTopWorld, 'marginBottomWorld:', marginBottomWorld);
-    console.log('[Monitor3D] screenWidth:', screenWidth, 'screenHeight:', screenHeight);
-    // Log the values passed to ScreenMesh
-    console.log('[Monitor3D] Passing to ScreenMesh width:', screenMeshWidth, 'height:', screenMeshHeight);
-
-    // Use these for all four frame pieces
-    const leftFrameWidth = marginLeftWorld;
-    const rightFrameWidth = marginRightWorld;
-    const topFrameHeight = marginTopWorld;
-    const bottomFrameHeight = marginBottomWorld;
-
-    // Use fixed housing dimensions and calculated bezel
-    const housingDepth = 0.1;
-    const bezelThickness = 0.05; // Fixed bezel thickness
-    const bezelDepth = 0.08;
-    
-    const dims = {
-      screen: { width: screenWidth, height: screenHeight },
-      frame: { left: leftFrameWidth, right: rightFrameWidth, top: topFrameHeight, bottom: bottomFrameHeight },
-      housing: {
-        width: screenWidth + 0.1 + 0.1,
-        height: screenHeight + 0.25 + 0.25,
-        depth: housingDepth,
-      },
-      bezel: { thickness: bezelThickness, depth: bezelDepth },
-      radius: Math.min(screenWidth + 0.1 + 0.1, screenHeight + 0.25 + 0.25) * 0.04,
-      topFrameY: 1.5 - 0.15 / 2, // (visibleHeight/2) - (topFrameHeight/2) for default
-      bottomFrameY: -1.5 + 0.25 / 2, // -(visibleHeight/2) + (bottomFrameHeight/2) for default
-      screenYOffset: 0,
-      led: { x: 1, y: -1, z: 0 },
-      unitsPerPixel: 1,
-    };
-    
-    // LED offsets in pixels
-    const ledRightPx = 48;
-    const ledBottomPx = 48;
-    const ledRightWorld = unitsPerPixelX * ledRightPx;
-    const ledBottomWorld = unitsPerPixelY * ledBottomPx;
-
-    // LED world position (from window edge, using same frustum logic as screen margin)
-    const ledX = (visibleWidth / 2) - ledRightWorld;
-    const ledY = -(visibleHeight / 2) + ledBottomWorld;
-    const ledZ = (housingDepth / 2); // flush with front face of frame
-    // const ledZ = ; // flush with front face of frame
-
-    // Calculate top and bottom frame Y positions using visibleHeight
-    const topFrameY = (visibleHeight / 2) - (topFrameHeight / 2);
-    const bottomFrameY = -(visibleHeight / 2) + (bottomFrameHeight / 2);
-    
-    const screenYOffset = (marginBottomWorld - marginTopWorld) / 2;
-    
-    return { ...dims, topFrameY, bottomFrameY, screenYOffset, led: { x: ledX, y: ledY, z: ledZ }, screenMeshWidth, screenMeshHeight };
-  }, [windowSize, screenZ, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx]); // Depends on windowSize and screenZ - will update on resize!
+  // Power LED: 8px radius LED at 48px from edges, at housing front depth
+  const ledRadius = 8 * worldPx;
+  const ledX = screenWorldWidth / 2 - 48 * worldPx;
+  const ledY = -screenWorldHeight / 2 + 48 * worldPx;
+  const ledZ = HOUSING_DEPTH / 2;
 
   // Memoize the plastic material for the frame
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture();
     return new THREE.MeshPhysicalMaterial({
-      color: '#2a2a2a', // beige
+      color: '#2a2a2a',
       roughness: 0.45,
       metalness: 0.05,
       clearcoat: 0.05,
@@ -230,72 +130,82 @@ export default function Monitor3D({
     });
   }, []);
 
-  return (
-    <group ref={monitorRef}>
-      {/* Housing Frame with CUTOUT - made of separate pieces - DIFFERENT SHADES */}
-      
-      {/* Dynamic FRAME around the screen */}
-      {/* Top frame */}
-      <mesh position={[0, dimensions.topFrameY, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
-            dimensions.frame.top,
-            dimensions.housing.depth
-          ]}
-          radius={filletRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      
-      {/* Bottom frame */}
-      <mesh position={[0, dimensions.bottomFrameY, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            dimensions.screen.width + dimensions.frame.left + dimensions.frame.right,
-            dimensions.frame.bottom,
-            dimensions.housing.depth
-          ]}
-          radius={filletRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      
-      {/* Left frame */}
-      <mesh position={[-dimensions.screen.width / 2 - dimensions.frame.left / 2, 0, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            dimensions.frame.left,
-            dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom,
-            dimensions.housing.depth
-          ]}
-          radius={filletRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      
-      {/* Right frame */}
-      <mesh position={[dimensions.screen.width / 2 + dimensions.frame.right / 2, 0, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            dimensions.frame.right,
-            dimensions.screen.height + dimensions.frame.top + dimensions.frame.bottom,
-            dimensions.housing.depth
-          ]}
-          radius={filletRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
+  // Generate terminal texture using canvas rendering
+  const screenPxWidth = windowSize.width - marginLeftPx - marginRightPx;
+  const screenPxHeight = windowSize.height - marginTopPx - marginBottomPx;
+  const terminalTexture = useTerminalCanvas(terminalEntries, {
+    width: screenPxWidth,
+    height: screenPxHeight,
+    backgroundColor: '#000000',
+    textColor: '#ffffff',
+    fontSize: 16,
+    fontFamily: 'monospace',
+    lineHeight: 1.2,
+    padding: 16,
+    spaceBetweenEntries: 4,
+    currentInput,
+    isTyping
+  });
 
+  return (
+    <group ref={monitorRef} position={[xOffset, yOffset, 0 - HOUSING_DEPTH / 2]}>
+      {/* Top frame */}
+      <mesh position={[0, screenWorldHeight / 2 + frameTop / 2, 0]} castShadow={true} receiveShadow={true}>
+        <RoundedBoxGeometry
+          args={[
+            screenWorldWidth + frameLeft + frameRight,
+            frameTop,
+            HOUSING_DEPTH
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
+      </mesh>
+      {/* Bottom frame */}
+      <mesh position={[0, -screenWorldHeight / 2 - frameBottom / 2, 0]} castShadow={true} receiveShadow={true}>
+        <RoundedBoxGeometry
+          args={[
+            screenWorldWidth + frameLeft + frameRight,
+            frameBottom,
+            HOUSING_DEPTH
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
+      </mesh>
+      {/* Left frame */}
+      <mesh position={[-screenWorldWidth / 2 - frameLeft / 2, 0, 0]} castShadow={true} receiveShadow={true}>
+        <RoundedBoxGeometry
+          args={[
+            frameLeft,
+            screenWorldHeight + frameTop + frameBottom,
+            HOUSING_DEPTH
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
+      </mesh>
+      {/* Right frame */}
+      <mesh position={[screenWorldWidth / 2 + frameRight / 2, 0, 0]} castShadow={true} receiveShadow={true}>
+        <RoundedBoxGeometry
+          args={[
+            frameRight,
+            screenWorldHeight + frameTop + frameBottom,
+            HOUSING_DEPTH
+          ]}
+          radius={filletRadius}
+          smoothness={filletSmoothness}
+        />
+        <primitive object={frameMaterial} attach="material" />
+      </mesh>
       {/* Screen area - RECESSED into housing */}
-      <group position={[0, dimensions.screenYOffset, screenZ]}>
+      <group position={[0, 0, screenZ]}>
         <ScreenMesh
-          width={dimensions.screenMeshWidth}
-          height={dimensions.screenMeshHeight}
+          width={screenMeshWidth}
+          height={screenMeshHeight}
           yOffset={0}
           debugMode={debugMode}
           scanlineStrength={scanlineStrength}
@@ -308,23 +218,20 @@ export default function Monitor3D({
           terminalTexture={terminalTexture}
         />
       </group>
-
-      {/* Lighting: Remove/reduce ambient, add point light for highlights */}
+      {/* Lighting */}
       <pointLight
         position={[-1,1,3]}
-        intensity={2}
+        intensity={10}
         distance={10}
         decay={2}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
       />
-
-      {/* Power LED - simple emissive sphere for realistic indicator effect */}
-      <group position={[dimensions.led.x, dimensions.led.y, dimensions.led.z]}>
-        {/* Emissive outer sphere */}
+      {/* Power LED */}
+      <group position={[ledX, ledY, ledZ]}>
         <mesh position={[0, 0, 0]} castShadow receiveShadow>
-          <sphereGeometry args={[0.02, 36, 36]} />
+          <sphereGeometry args={[ledRadius, 36, 36]} />
           <meshPhysicalMaterial
             color="#fff0c7"
             emissive="#fff0c7"
@@ -335,7 +242,6 @@ export default function Monitor3D({
             clearcoatRoughness={0.3}
           />
         </mesh>
-        {/* Subtle point light to simulate LED lighting the frame */}
         <pointLight
           color="#fff0c7"
           intensity={0.01}
@@ -349,4 +255,4 @@ export default function Monitor3D({
       </group>
     </group>
   );
-} 
+}

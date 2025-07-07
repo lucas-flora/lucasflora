@@ -1,11 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useEffect } from 'react';
+import { useThree } from '@react-three/fiber';
+import { PerspectiveCamera } from 'three';
 import dynamic from 'next/dynamic';
 import { useWebGPU } from '../utils/useWebGPU';
 import TerminalController from '../components/TerminalController';
 import FallbackPage from '../components/FallbackPage';
 import { TerminalEntry } from '../lib/terminal-types';
+
+// World units per CSS pixel (for frame thickness conversion)
+const WORLD_PIXEL = 0.003;
 
 // Dynamically import Canvas to avoid SSR issues
 const Canvas = dynamic(() => import('@react-three/fiber').then(mod => ({ default: mod.Canvas })), {
@@ -54,8 +60,10 @@ function MainScene({
   terminalEntries,
   currentInput,
   isTyping,
-  debugMode
-}: { 
+  debugMode,
+  screenWorldWidth,
+  screenWorldHeight
+}: {
   screenZ: number;
   scanlineStrength: number;
   scanlineScale: number;
@@ -72,12 +80,18 @@ function MainScene({
   currentInput: string;
   isTyping: boolean;
   debugMode: number;
+  screenWorldWidth: number;
+  screenWorldHeight: number;
 }) {
   // Margin values in pixels
   const marginTopPx = 48;
   const marginRightPx = 48;
   const marginBottomPx = 72;
   const marginLeftPx = 48;
+
+  // Compute total monitor size in world units (screen + bezel)
+  const totalWorldWidth = screenWorldWidth + (marginLeftPx + marginRightPx) * WORLD_PIXEL;
+  const totalWorldHeight = screenWorldHeight + (marginTopPx + marginBottomPx) * WORLD_PIXEL;
 
   return (
     <>
@@ -99,7 +113,10 @@ function MainScene({
         isTyping={isTyping}
         debugMode={debugMode}
       />
-      
+
+      {/* Auto‐fit camera to the monitor dimensions */}
+      <AutoFitCamera screenWidth={totalWorldWidth + 0.01} screenHeight={totalWorldHeight + 0.01} />
+
       {/* Post-processing chain */}
       <EffectComposer>
         <Bloom
@@ -118,16 +135,27 @@ export default function Home() {
   const [currentInput, setCurrentInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const { supported: webGPUSupported, loading: webGPULoading } = useWebGPU();
-  
+
+  // Window size state and resize handler
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Debug positioning state (removed camera - using fixed position)
   const [housingZ, setHousingZ] = useState(-0.2);
   const [screenZ, setScreenZ] = useState(-0.05);
   const [debugMode, setDebugMode] = useState(0);
-  
+
   // Terminal display state
   const [hideTerminalOverlay, setHideTerminalOverlay] = useState(true);
   const [terminalYOffset, setTerminalYOffset] = useState(100);
-  
+
   // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.4);
   const [bubbleSize, setBubbleSize] = useState(0.75);
@@ -136,12 +164,25 @@ export default function Home() {
   const [scanlineStrength, setScanlineStrength] = useState(0.35);
   const [scanlineScale, setScanlineScale] = useState(450.0);
   const [emissiveBoost, setEmissiveBoost] = useState(1.2);
-  
+
   // Bloom parameters - Better defaults for the new setup
-  const [bloomIntensity, setBloomIntensity] = useState(1.7);
+  const [bloomIntensity, setBloomIntensity] = useState(2.5);
   const [bloomKernelSize, setBloomKernelSize] = useState(3);
   const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.3);
+
+  // Margins (should match MainScene and Monitor3D)
+  const marginTopPx = 48;
+  const marginRightPx = 48;
+  const marginBottomPx = 72;
+  const marginLeftPx = 48;
+
+  // Compute screen pixel and world sizes
+  const WORLD_PIXEL = 0.003;
+  const screenPxWidth = windowSize.width - marginLeftPx - marginRightPx;
+  const screenPxHeight = windowSize.height - marginTopPx - marginBottomPx;
+  const screenWorldWidth = screenPxWidth * WORLD_PIXEL;
+  const screenWorldHeight = screenPxHeight * WORLD_PIXEL;
 
   const handleEntriesChange = (newEntries: TerminalEntry[]) => {
     setEntries(newEntries);
@@ -172,20 +213,20 @@ export default function Home() {
           alpha: true,
           preserveDrawingBuffer: true,
         }}
-        camera={{ 
+        camera={{
           fov: 50,
           position: [0, 0, 2.6] // Much closer - monitor should fill screen
         }}
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
       >
-        <MainScene 
-          screenZ={screenZ} 
-          scanlineStrength={scanlineStrength} 
-          scanlineScale={scanlineScale} 
-          cornerRoundness={cornerRoundness} 
-          bubbleSize={bubbleSize} 
-          edgeTransition={edgeTransition} 
+        <MainScene
+          screenZ={screenZ}
+          scanlineStrength={scanlineStrength}
+          scanlineScale={scanlineScale}
+          cornerRoundness={cornerRoundness}
+          bubbleSize={bubbleSize}
+          edgeTransition={edgeTransition}
           displacementAmount={displacementAmount}
           emissiveBoost={emissiveBoost}
           bloomIntensity={bloomIntensity}
@@ -196,11 +237,13 @@ export default function Home() {
           currentInput={currentInput}
           isTyping={isTyping}
           debugMode={debugMode}
+          screenWorldWidth={screenWorldWidth}
+          screenWorldHeight={screenWorldHeight}
         />
       </Canvas>
-      
+
       {/* Debug Controls */}
-      <DebugControls 
+      <DebugControls
         housingZ={housingZ}
         screenZ={screenZ}
         onHousingZChange={setHousingZ}
@@ -234,12 +277,12 @@ export default function Home() {
         onHideTerminalOverlayChange={setHideTerminalOverlay}
         onTerminalYOffsetChange={setTerminalYOffset}
       />
-      
+
       {/* Terminal overlay - now with visibility control */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
         <div className="pointer-events-auto">
-          <TerminalController 
-            onEntriesChange={handleEntriesChange} 
+          <TerminalController
+            onEntriesChange={handleEntriesChange}
             onCurrentInputChange={setCurrentInput}
             onTypingStateChange={setIsTyping}
             hideVisualContent={hideTerminalOverlay}
@@ -249,4 +292,25 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+
+function AutoFitCamera({ screenWidth, screenHeight }: { screenWidth: number; screenHeight: number }) {
+  const { camera: genericCamera, size } = useThree();
+  useEffect(() => {
+    const camera = genericCamera as PerspectiveCamera;
+    if (!(camera instanceof PerspectiveCamera)) return;
+    const aspect = size.width / size.height;
+    const vFov = (camera.fov * Math.PI) / 180;
+    // Vertical distance needed
+    const distV = (screenHeight / 2) / Math.tan(vFov / 2);
+    // Horizontal FOV
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
+    // Horizontal distance needed
+    const distH = (screenWidth / 2) / Math.tan(hFov / 2);
+    const dist = Math.max(distV, distH) * 1.05; // Pad by 5%
+    camera.position.set(0, 0, dist);
+    camera.updateProjectionMatrix();
+  }, [genericCamera, size.width, size.height, screenWidth, screenHeight]);
+  return null;
 }
