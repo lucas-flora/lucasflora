@@ -133,8 +133,8 @@ export default function Monitor3D({
 
   // Power LED: 8px radius LED at 48px from edges, at housing front depth
   // variables for power LED position with safe calculations
-  const ledXoffset = -24;
-  const ledYoffset = -24;
+  const ledXoffset = 8;
+  const ledYoffset = -18;
   const ledRadius = 6;
   const ledRadiusWorld = Math.max(ledRadius * safeWorldPx, 0.001); // Ensure minimum LED size
   const ledX = screenWorldWidth / 2 - ledXoffset * safeWorldPx;
