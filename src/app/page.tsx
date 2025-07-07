@@ -300,16 +300,44 @@ function AutoFitCamera({ screenWidth, screenHeight }: { screenWidth: number; scr
   useEffect(() => {
     const camera = genericCamera as PerspectiveCamera;
     if (!(camera instanceof PerspectiveCamera)) return;
-    const aspect = size.width / size.height;
-    const vFov = (camera.fov * Math.PI) / 180;
-    // Vertical distance needed
-    const distV = (screenHeight / 2) / Math.tan(vFov / 2);
-    // Horizontal FOV
-    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect);
-    // Horizontal distance needed
-    const distH = (screenWidth / 2) / Math.tan(hFov / 2);
-    const dist = Math.max(distV, distH) * 1.05; // Pad by 5%
-    camera.position.set(0, 0, dist);
+    
+    // Calculate monitor diagonal in world units
+    const diagonal = Math.sqrt(screenWidth * screenWidth + screenHeight * screenHeight);
+    
+    // Set viewing distance to a natural multiple of the diagonal
+    // This simulates sitting at a proper distance from a real monitor
+    const naturalViewingDistance = diagonal * 1.8; // 1.8x diagonal is a comfortable viewing distance
+    
+    // Set camera position
+    camera.position.set(0, 0, naturalViewingDistance);
+    
+    // Optionally adjust FOV to keep monitor reasonably sized in view
+    // But prioritize natural perspective over perfect fit
+    const minFOV = 35; // Prevent too narrow FOV
+    const maxFOV = 65; // Prevent too wide FOV (which causes distortion)
+    
+    // Calculate what FOV would be needed to show the monitor height
+    const currentFOV = camera.fov;
+    const vFov = (currentFOV * Math.PI) / 180;
+    const distanceToFillVertically = (screenHeight / 2) / Math.tan(vFov / 2);
+    
+    // If our natural distance is much different than what's needed to fill,
+    // adjust FOV slightly, but within reasonable bounds
+    if (naturalViewingDistance > distanceToFillVertically * 1.5) {
+      // Monitor would be too small, decrease FOV a bit
+      const newVFov = 2 * Math.atan((screenHeight / 2) / naturalViewingDistance);
+      const newFOVDegrees = (newVFov * 180) / Math.PI;
+      camera.fov = Math.max(minFOV, Math.min(maxFOV, newFOVDegrees));
+    } else if (naturalViewingDistance < distanceToFillVertically * 0.7) {
+      // Monitor would be too large, increase FOV a bit
+      const newVFov = 2 * Math.atan((screenHeight / 2) / naturalViewingDistance);
+      const newFOVDegrees = (newVFov * 180) / Math.PI;
+      camera.fov = Math.max(minFOV, Math.min(maxFOV, newFOVDegrees));
+    } else {
+      // Keep the current FOV if it's reasonable
+      camera.fov = Math.max(minFOV, Math.min(maxFOV, currentFOV));
+    }
+    
     camera.updateProjectionMatrix();
   }, [genericCamera, size.width, size.height, screenWidth, screenHeight]);
   return null;
