@@ -46,6 +46,10 @@ const DebugControls = dynamic(() => import('../components/DebugControls'), {
 // Main 3D scene component
 function MainScene({
   screenZ,
+  marginTopPx,
+  marginRightPx,
+  marginBottomPx,
+  marginLeftPx,
   scanlineStrength,
   scanlineScale,
   cornerRoundness,
@@ -65,6 +69,10 @@ function MainScene({
   screenWorldHeight
 }: {
   screenZ: number;
+  marginTopPx: number;
+  marginRightPx: number;
+  marginBottomPx: number;
+  marginLeftPx: number;
   scanlineStrength: number;
   scanlineScale: number;
   cornerRoundness: number;
@@ -83,11 +91,6 @@ function MainScene({
   screenWorldWidth: number;
   screenWorldHeight: number;
 }) {
-  // Margin values in pixels
-  const marginTopPx = 48;
-  const marginRightPx = 48;
-  const marginBottomPx = 48;
-  const marginLeftPx = 48;
 
   // Compute total monitor size in world units (screen + bezel)
   const totalWorldWidth = screenWorldWidth + (marginLeftPx + marginRightPx) * WORLD_PIXEL;
@@ -172,15 +175,16 @@ export default function Home() {
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.3);
 
   // Margins (should match MainScene and Monitor3D)
-  const marginTopPx = 48;
-  const marginRightPx = 48;
-  const marginBottomPx = 48;
-  const marginLeftPx = 48;
+  const marginTopPx = 12;
+  const marginRightPx = 12;
+  const marginBottomPx = 36;
+  const marginLeftPx = 12;
 
-  // Compute screen pixel and world sizes
+  // Compute screen pixel and world sizes with safety checks
   const WORLD_PIXEL = 0.003;
-  const screenPxWidth = windowSize.width - marginLeftPx - marginRightPx;
-  const screenPxHeight = windowSize.height - marginTopPx - marginBottomPx;
+  // Ensure screen dimensions are positive (minimum 1px each)
+  const screenPxWidth = Math.max(windowSize.width - marginLeftPx - marginRightPx, 1);
+  const screenPxHeight = Math.max(windowSize.height - marginTopPx - marginBottomPx, 1);
   const screenWorldWidth = screenPxWidth * WORLD_PIXEL;
   const screenWorldHeight = screenPxHeight * WORLD_PIXEL;
 
@@ -222,6 +226,10 @@ export default function Home() {
       >
         <MainScene
           screenZ={screenZ}
+          marginTopPx={marginTopPx}
+          marginRightPx={marginRightPx}
+          marginBottomPx={marginBottomPx}
+          marginLeftPx={marginLeftPx}
           scanlineStrength={scanlineStrength}
           scanlineScale={scanlineScale}
           cornerRoundness={cornerRoundness}
@@ -301,8 +309,12 @@ function AutoFitCamera({ screenWidth, screenHeight }: { screenWidth: number; scr
     const camera = genericCamera as PerspectiveCamera;
     if (!(camera instanceof PerspectiveCamera)) return;
     
+    // Validate screen dimensions to prevent NaN calculations
+    const safeScreenWidth = Math.max(screenWidth || 0.001, 0.001);
+    const safeScreenHeight = Math.max(screenHeight || 0.001, 0.001);
+    
     // Calculate monitor diagonal in world units
-    const diagonal = Math.sqrt(screenWidth * screenWidth + screenHeight * screenHeight);
+    const diagonal = Math.sqrt(safeScreenWidth * safeScreenWidth + safeScreenHeight * safeScreenHeight);
     
     // Set viewing distance to a natural multiple of the diagonal
     // This simulates sitting at a proper distance from a real monitor
@@ -319,18 +331,18 @@ function AutoFitCamera({ screenWidth, screenHeight }: { screenWidth: number; scr
     // Calculate what FOV would be needed to show the monitor height
     const currentFOV = camera.fov;
     const vFov = (currentFOV * Math.PI) / 180;
-    const distanceToFillVertically = (screenHeight / 2) / Math.tan(vFov / 2);
+    const distanceToFillVertically = (safeScreenHeight / 2) / Math.tan(vFov / 2);
     
     // If our natural distance is much different than what's needed to fill,
     // adjust FOV slightly, but within reasonable bounds
     if (naturalViewingDistance > distanceToFillVertically * 1.5) {
       // Monitor would be too small, decrease FOV a bit
-      const newVFov = 2 * Math.atan((screenHeight / 2) / naturalViewingDistance);
+      const newVFov = 2 * Math.atan((safeScreenHeight / 2) / naturalViewingDistance);
       const newFOVDegrees = (newVFov * 180) / Math.PI;
       camera.fov = Math.max(minFOV, Math.min(maxFOV, newFOVDegrees));
     } else if (naturalViewingDistance < distanceToFillVertically * 0.7) {
       // Monitor would be too large, increase FOV a bit
-      const newVFov = 2 * Math.atan((screenHeight / 2) / naturalViewingDistance);
+      const newVFov = 2 * Math.atan((safeScreenHeight / 2) / naturalViewingDistance);
       const newFOVDegrees = (newVFov * 180) / Math.PI;
       camera.fov = Math.max(minFOV, Math.min(maxFOV, newFOVDegrees));
     } else {

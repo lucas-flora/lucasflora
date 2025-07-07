@@ -93,14 +93,35 @@ export default function Monitor3D({
   // distance from camera to enclosure front face at Z=0
   const dist = camera.position.z;
   // world units per CSS pixel so geometry will fill view
-  const worldPx = (2 * dist * Math.tan(fovRad / 2)) / windowSize.height;
+  // Add safety check to prevent division by zero and ensure reasonable values
+  const safeWindowHeight = Math.max(windowSize.height, 1); // Minimum 1px to prevent division by zero
+  const worldPx = (2 * dist * Math.tan(fovRad / 2)) / safeWindowHeight;
+  
+  // Validate worldPx to ensure it's a reasonable finite number
+  const safeWorldPx = (isFinite(worldPx) && worldPx > 0) ? worldPx : 0.001; // Fallback to small positive value
 
-  const screenWorldWidth  = (windowSize.width  - marginLeftPx - marginRightPx) * worldPx;
-  const screenWorldHeight = (windowSize.height - marginTopPx  - marginBottomPx) * worldPx;
-  const frameLeft   = marginLeftPx   * worldPx;
-  const frameRight  = marginRightPx  * worldPx;
-  const frameTop    = marginTopPx    * worldPx;
-  const frameBottom = marginBottomPx * worldPx;
+  // Calculate screen dimensions with validation
+  const rawScreenWidth = windowSize.width - marginLeftPx - marginRightPx;
+  const rawScreenHeight = windowSize.height - marginTopPx - marginBottomPx;
+  
+  // Ensure screen dimensions are positive (minimum 1px each)
+  const safeScreenPxWidth = Math.max(rawScreenWidth, 1);
+  const safeScreenPxHeight = Math.max(rawScreenHeight, 1);
+  
+  const screenWorldWidth = safeScreenPxWidth * safeWorldPx;
+  const screenWorldHeight = safeScreenPxHeight * safeWorldPx;
+  
+  // Calculate frame dimensions with minimum thresholds
+  const minFramePx = 8; // Minimum 8 pixels for any frame dimension
+  const safeMarginLeft = Math.max(marginLeftPx, minFramePx);
+  const safeMarginRight = Math.max(marginRightPx, minFramePx);
+  const safeMarginTop = Math.max(marginTopPx, minFramePx);
+  const safeMarginBottom = Math.max(marginBottomPx, minFramePx);
+  
+  const frameLeft = safeMarginLeft * safeWorldPx;
+  const frameRight = safeMarginRight * safeWorldPx;
+  const frameTop = safeMarginTop * safeWorldPx;
+  const frameBottom = safeMarginBottom * safeWorldPx;
 
   // Center offsets so inner edges align with margins
   const xOffset = (frameRight - frameLeft) / 2;
@@ -111,13 +132,13 @@ export default function Monitor3D({
   const screenMeshHeight = screenWorldHeight + 0.01;
 
   // Power LED: 8px radius LED at 48px from edges, at housing front depth
-  // variables for power LED position
+  // variables for power LED position with safe calculations
   const ledXoffset = -24;
   const ledYoffset = -24;
   const ledRadius = 6;
-  const ledRadiusWorld = ledRadius * worldPx;
-  const ledX = screenWorldWidth / 2 - ledXoffset * worldPx;
-  const ledY = -screenWorldHeight / 2 + ledYoffset * worldPx;
+  const ledRadiusWorld = Math.max(ledRadius * safeWorldPx, 0.001); // Ensure minimum LED size
+  const ledX = screenWorldWidth / 2 - ledXoffset * safeWorldPx;
+  const ledY = -screenWorldHeight / 2 + ledYoffset * safeWorldPx;
   const ledZ = HOUSING_DEPTH / 2;
 
   // Memoize the plastic material for the frame
@@ -134,12 +155,10 @@ export default function Monitor3D({
     });
   }, []);
 
-  // Generate terminal texture using canvas rendering
-  const screenPxWidth = windowSize.width - marginLeftPx - marginRightPx;
-  const screenPxHeight = windowSize.height - marginTopPx - marginBottomPx;
+  // Generate terminal texture using canvas rendering with safe dimensions
   const terminalTexture = useTerminalCanvas(terminalEntries, {
-    width: screenPxWidth,
-    height: screenPxHeight,
+    width: safeScreenPxWidth,
+    height: safeScreenPxHeight,
     backgroundColor: '#000000',
     textColor: '#ffffff',
     fontSize: 16,
@@ -158,56 +177,71 @@ export default function Monitor3D({
   const thickFrameLeft = frameLeft * thicknessFactor;
   const thickFrameRight = frameRight * thicknessFactor;
 
+  // Ensure all geometry dimensions are valid and above minimum thresholds
+  // RoundedBoxGeometry requires dimensions > 0 and radius < smallest dimension / 2
+  const minGeometrySize = 0.001; // Minimum geometry dimension in world units
+  const safeRadius = Math.min(filletRadius, 
+    Math.min(thickFrameTop, thickFrameBottom, thickFrameLeft, thickFrameRight, HOUSING_DEPTH) / 3
+  );
+
+  // Validate all frame dimensions
+  const safeThickFrameTop = Math.max(thickFrameTop, minGeometrySize);
+  const safeThickFrameBottom = Math.max(thickFrameBottom, minGeometrySize);
+  const safeThickFrameLeft = Math.max(thickFrameLeft, minGeometrySize);
+  const safeThickFrameRight = Math.max(thickFrameRight, minGeometrySize);
+  const safeScreenWorldWidth = Math.max(screenWorldWidth, minGeometrySize);
+  const safeScreenWorldHeight = Math.max(screenWorldHeight, minGeometrySize);
+
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, 0 - HOUSING_DEPTH / 2]}>
       {/* Top frame */}
-      <mesh position={[0, screenWorldHeight / 2 + thickFrameTop / 2, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[0, safeScreenWorldHeight / 2 + safeThickFrameTop / 2, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            screenWorldWidth + thickFrameLeft + thickFrameRight,
-            thickFrameTop,
+            safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
+            safeThickFrameTop,
             HOUSING_DEPTH
           ]}
-          radius={filletRadius}
+          radius={safeRadius}
           smoothness={filletSmoothness}
         />
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Bottom frame */}
-      <mesh position={[0, -screenWorldHeight / 2 - thickFrameBottom / 2, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[0, -safeScreenWorldHeight / 2 - safeThickFrameBottom / 2, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            screenWorldWidth + thickFrameLeft + thickFrameRight,
-            thickFrameBottom,
+            safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
+            safeThickFrameBottom,
             HOUSING_DEPTH
           ]}
-          radius={filletRadius}
+          radius={safeRadius}
           smoothness={filletSmoothness}
         />
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Left frame */}
-      <mesh position={[-screenWorldWidth / 2 - thickFrameLeft / 2, 0, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[-safeScreenWorldWidth / 2 - safeThickFrameLeft / 2, 0, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            thickFrameLeft,
-            screenWorldHeight + thickFrameTop + thickFrameBottom,
+            safeThickFrameLeft,
+            safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
             HOUSING_DEPTH
           ]}
-          radius={filletRadius}
+          radius={safeRadius}
           smoothness={filletSmoothness}
         />
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Right frame */}
-      <mesh position={[screenWorldWidth / 2 + thickFrameRight / 2, 0, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[safeScreenWorldWidth / 2 + safeThickFrameRight / 2, 0, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            thickFrameRight,
-            screenWorldHeight + thickFrameTop + thickFrameBottom,
+            safeThickFrameRight,
+            safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
             HOUSING_DEPTH
           ]}
-          radius={filletRadius}
+          radius={safeRadius}
           smoothness={filletSmoothness}
         />
         <primitive object={frameMaterial} attach="material" />
@@ -215,8 +249,8 @@ export default function Monitor3D({
       {/* Screen area - RECESSED into housing */}
       <group position={[0, 0, screenZ]}>
         <ScreenMesh
-          width={screenMeshWidth}
-          height={screenMeshHeight}
+          width={Math.max(screenMeshWidth, minGeometrySize)}
+          height={Math.max(screenMeshHeight, minGeometrySize)}
           yOffset={0}
           debugMode={debugMode}
           scanlineStrength={scanlineStrength}
