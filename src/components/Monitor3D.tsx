@@ -111,9 +111,13 @@ export default function Monitor3D({
   const screenMeshHeight = screenWorldHeight + 0.01;
 
   // Power LED: 8px radius LED at 48px from edges, at housing front depth
-  const ledRadius = 8 * worldPx;
-  const ledX = screenWorldWidth / 2 - 48 * worldPx;
-  const ledY = -screenWorldHeight / 2 + 48 * worldPx;
+  // variables for power LED position
+  const ledXoffset = -24;
+  const ledYoffset = -24;
+  const ledRadius = 6;
+  const ledRadiusWorld = ledRadius * worldPx;
+  const ledX = screenWorldWidth / 2 - ledXoffset * worldPx;
+  const ledY = -screenWorldHeight / 2 + ledYoffset * worldPx;
   const ledZ = HOUSING_DEPTH / 2;
 
   // Memoize the plastic material for the frame
@@ -147,14 +151,21 @@ export default function Monitor3D({
     isTyping
   });
 
+  // Make frame pieces much thicker to ensure no gaps at screen edges
+  const thicknessFactor = 5; // Make frame pieces 5x thicker than the margins
+  const thickFrameTop = frameTop * thicknessFactor;
+  const thickFrameBottom = frameBottom * thicknessFactor;
+  const thickFrameLeft = frameLeft * thicknessFactor;
+  const thickFrameRight = frameRight * thicknessFactor;
+
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, 0 - HOUSING_DEPTH / 2]}>
       {/* Top frame */}
-      <mesh position={[0, screenWorldHeight / 2 + frameTop / 2, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[0, screenWorldHeight / 2 + thickFrameTop / 2, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            screenWorldWidth + frameLeft + frameRight,
-            frameTop,
+            screenWorldWidth + thickFrameLeft + thickFrameRight,
+            thickFrameTop,
             HOUSING_DEPTH
           ]}
           radius={filletRadius}
@@ -163,11 +174,11 @@ export default function Monitor3D({
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Bottom frame */}
-      <mesh position={[0, -screenWorldHeight / 2 - frameBottom / 2, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[0, -screenWorldHeight / 2 - thickFrameBottom / 2, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            screenWorldWidth + frameLeft + frameRight,
-            frameBottom,
+            screenWorldWidth + thickFrameLeft + thickFrameRight,
+            thickFrameBottom,
             HOUSING_DEPTH
           ]}
           radius={filletRadius}
@@ -176,11 +187,11 @@ export default function Monitor3D({
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Left frame */}
-      <mesh position={[-screenWorldWidth / 2 - frameLeft / 2, 0, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[-screenWorldWidth / 2 - thickFrameLeft / 2, 0, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            frameLeft,
-            screenWorldHeight + frameTop + frameBottom,
+            thickFrameLeft,
+            screenWorldHeight + thickFrameTop + thickFrameBottom,
             HOUSING_DEPTH
           ]}
           radius={filletRadius}
@@ -189,11 +200,11 @@ export default function Monitor3D({
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Right frame */}
-      <mesh position={[screenWorldWidth / 2 + frameRight / 2, 0, 0]} castShadow={true} receiveShadow={true}>
+      <mesh position={[screenWorldWidth / 2 + thickFrameRight / 2, 0, 0]} castShadow={true} receiveShadow={true}>
         <RoundedBoxGeometry
           args={[
-            frameRight,
-            screenWorldHeight + frameTop + frameBottom,
+            thickFrameRight,
+            screenWorldHeight + thickFrameTop + thickFrameBottom,
             HOUSING_DEPTH
           ]}
           radius={filletRadius}
@@ -231,7 +242,7 @@ export default function Monitor3D({
       {/* Power LED */}
       <group position={[ledX, ledY, ledZ]}>
         <mesh position={[0, 0, 0]} castShadow receiveShadow>
-          <sphereGeometry args={[ledRadius, 36, 36]} />
+          <sphereGeometry args={[ledRadiusWorld, 36, 36]} />
           <meshPhysicalMaterial
             color="#fff0c7"
             emissive="#fff0c7"

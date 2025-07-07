@@ -86,7 +86,7 @@ function MainScene({
   // Margin values in pixels
   const marginTopPx = 48;
   const marginRightPx = 48;
-  const marginBottomPx = 72;
+  const marginBottomPx = 48;
   const marginLeftPx = 48;
 
   // Compute total monitor size in world units (screen + bezel)
@@ -174,7 +174,7 @@ export default function Home() {
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 48;
   const marginRightPx = 48;
-  const marginBottomPx = 72;
+  const marginBottomPx = 48;
   const marginLeftPx = 48;
 
   // Compute screen pixel and world sizes
