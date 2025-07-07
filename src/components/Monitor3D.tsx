@@ -230,9 +230,11 @@ export default function Monitor3D({
         />
       </group>
       {/* Lighting */}
+      {/* Key light */}
       <pointLight
         position={[-1,1,3]}
-        intensity={10}
+        color="#ffb59c"
+        intensity={4}
         distance={10}
         decay={2}
         castShadow
