@@ -30,19 +30,22 @@ function createCheckerboardTexture(size = 64, squares = 8) {
 // GLSL shader for prototyping (replace with WGSL when WebGPU is ready)
 const vertexShader = `
 varying vec2 vUv;
+varying vec2 vWorldPos;
 
 uniform float cornerRoundness;
 uniform float bubbleSize;
 uniform float edgeTransition;
 uniform float displacementAmount;
+uniform float screenWidth;
+uniform float screenHeight;
 
-// Bubble displacement map generator (same as fragment shader)
-float bubbleMap(vec2 uv, float cornerRadius, float size, float transition) {
-  // Convert UV to centered coordinates (-0.5 to 0.5)
-  vec2 pos = uv - 0.5;
+// Bubble displacement map generator using world coordinates
+float bubbleMapWorld(vec2 worldPos, float cornerRadius, float size, float transition, float screenW, float screenH) {
+  // Convert world position to centered coordinates
+  vec2 pos = worldPos;
   
-  // Scale the rectangle size based on size parameter
-  vec2 rectSize = vec2(0.5, 0.5) * size;
+  // Scale the rectangle size based on size parameter - use world dimensions
+  vec2 rectSize = vec2(screenW, screenH) * 0.5 * size;
   
   // Calculate distance to rounded rectangle
   vec2 q = abs(pos) - rectSize + cornerRadius;
@@ -55,9 +58,13 @@ float bubbleMap(vec2 uv, float cornerRadius, float size, float transition) {
 void main() {
   vUv = uv;
   
-  // Calculate bubble displacement
+  // Use the actual vertex position coordinates which should be in correct world space
+  // PlaneGeometry creates vertices positioned correctly based on width/height parameters
+  vWorldPos = position.xy;
+  
+  // Calculate bubble displacement using world coordinates
   float cornerRadius = mix(0.01, 0.3, cornerRoundness);
-  float displacement = bubbleMap(uv, cornerRadius, bubbleSize, edgeTransition);
+  float displacement = bubbleMapWorld(vWorldPos, cornerRadius, bubbleSize, edgeTransition, screenWidth, screenHeight);
   
   // Apply displacement along normal (Z direction for flat plane)
   vec3 displaced = position + normal * displacement * displacementAmount;
@@ -68,33 +75,37 @@ void main() {
 
 const fragmentShader = `
 varying vec2 vUv;
+varying vec2 vWorldPos;
 
 uniform sampler2D screenTex;
 uniform float scanlineStrength;
-uniform float scanlineScale;
+uniform float lineSpacing;
 uniform int debugMode;
 uniform float cornerRoundness;
 uniform float bubbleSize;
 uniform float edgeTransition;
 uniform float displacementAmount;
 uniform float emissiveBoost;
+uniform float screenWidth;
+uniform float screenHeight;
 
-// Scanline effect map generator
-float scanlineMap(vec2 uv, float strength, float scale) {
-  // Use scale parameter to control line density
-  float yLine = floor(uv.y * scale);
+// Scanline effect map generator using world coordinates
+float scanlineMapWorld(vec2 worldPos, float strength, float worldScale) {
+  // Use world coordinates for consistent line spacing
+  // worldScale is now in world units (lines per world unit)
+  float yLine = floor(worldPos.y * worldScale);
   // Make scanlines more pronounced - darken every other line significantly
   float dim = mod(yLine, 2.0) < 1.0 ? 1.0 - strength : 1.0;
   return dim;
 }
 
-// Bubble displacement map generator (same as vertex shader)
-float bubbleMap(vec2 uv, float cornerRadius, float size, float transition) {
-  // Convert UV to centered coordinates (-0.5 to 0.5)
-  vec2 pos = uv - 0.5;
+// Bubble displacement map generator using world coordinates
+float bubbleMapWorld(vec2 worldPos, float cornerRadius, float size, float transition, float screenW, float screenH) {
+  // Use world position directly
+  vec2 pos = worldPos;
   
-  // Scale the rectangle size based on size parameter
-  vec2 rectSize = vec2(0.5, 0.5) * size;
+  // Scale the rectangle size based on size parameter - use world dimensions
+  vec2 rectSize = vec2(screenW, screenH) * 0.5 * size;
   
   // Calculate distance to rounded rectangle
   vec2 q = abs(pos) - rectSize + cornerRadius;
@@ -104,9 +115,10 @@ float bubbleMap(vec2 uv, float cornerRadius, float size, float transition) {
   return 1.0 - smoothstep(-transition, transition, dist);
 }
 
-// Checkerboard pattern generator (moved from external function)
-float checkerboardMap(vec2 uv, float squares) {
-  vec2 grid = floor(uv * squares);
+// Checkerboard pattern generator using world coordinates
+float checkerboardMapWorld(vec2 worldPos, float worldSquareSize) {
+  // worldSquareSize is the size of each square in world units
+  vec2 grid = floor(worldPos / worldSquareSize);
   float checker = mod(grid.x + grid.y, 2.0);
   return checker;
 }
@@ -114,24 +126,31 @@ float checkerboardMap(vec2 uv, float squares) {
 void main() {
   // Debug modes for viewing individual maps
   if (debugMode == 1) {
-    // Show bubble map (only calculate when needed)
-    float bubble = bubbleMap(vUv, mix(0.01, 0.3, cornerRoundness), bubbleSize, edgeTransition);
+    // Show bubble map using world coordinates
+    float bubble = bubbleMapWorld(vWorldPos, mix(0.01, 0.3, cornerRoundness), bubbleSize, edgeTransition, screenWidth, screenHeight);
     gl_FragColor = vec4(vec3(bubble), 1.0);
     return;
   } else if (debugMode == 2) {
-    // Show scanline map
-    float scanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
+    // Show scanline map using true world coordinates
+    // Use configurable world line spacing, completely independent of screen dimensions
+    float yLine = floor(vWorldPos.y / lineSpacing);
+    float scanlines = mod(yLine, 2.0) < 1.0 ? 1.0 - scanlineStrength : 1.0;
     gl_FragColor = vec4(vec3(scanlines), 1.0);
     return;
   } else if (debugMode == 3) {
-    // Show checkerboard map
-    float checkerboard = checkerboardMap(vUv, 8.0);
+    // Show checkerboard map using true world coordinates
+    // Use fixed world square size, completely independent of screen dimensions
+    float squareSize = 0.1; // 0.1 world units per square
+    vec2 grid = floor(vWorldPos / squareSize);
+    float checkerboard = mod(grid.x + grid.y, 2.0);
     gl_FragColor = vec4(vec3(checkerboard), 1.0);
     return;
   } else if (debugMode == 4) {
-    // Show white screen with scanlines for testing
+    // Show white screen with scanlines for testing using configurable world coordinates
     vec3 white = vec3(1.0);
-    vec3 scannedWhite = white * scanlineMap(vUv, scanlineStrength, scanlineScale);
+    float yLine = floor(vWorldPos.y / lineSpacing);
+    float scanlines = mod(yLine, 2.0) < 1.0 ? 1.0 - scanlineStrength : 1.0;
+    vec3 scannedWhite = white * scanlines;
     gl_FragColor = vec4(scannedWhite, 1.0);
     return;
   }
@@ -151,9 +170,9 @@ void main() {
   // CRT screens are bright light sources, not just reflective surfaces
   vec3 emissiveColor = glowColor * emissiveBoost; // Configurable boost for bloom
   
-  // Apply scanlines AFTER emissive boost - calculated fresh for normal rendering
-  // Use original UV coordinates for straight scanlines regardless of geometry displacement
-  float finalScanlines = scanlineMap(vUv, scanlineStrength, scanlineScale);
+  // Apply scanlines AFTER emissive boost - using configurable world coordinates
+  float yLine = floor(vWorldPos.y / lineSpacing);
+  float finalScanlines = mod(yLine, 2.0) < 1.0 ? 1.0 - scanlineStrength : 1.0;
   vec3 finalColor = emissiveColor * finalScanlines;
   
   // Future effects like channel shifting or blur would go here
@@ -167,7 +186,7 @@ extend({ ShaderMaterial });
 interface ScreenShaderMaterialProps {
   debugMode?: number;
   scanlineStrength?: number;
-  scanlineScale?: number;
+  lineSpacing?: number;
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -175,13 +194,15 @@ interface ScreenShaderMaterialProps {
   emissiveBoost?: number;
   testTexture?: Texture;
   terminalTexture?: Texture | null;
+  screenWidth?: number;
+  screenHeight?: number;
   [key: string]: unknown;
 }
 
 export default function ScreenShaderMaterial({
   debugMode = 0,
   scanlineStrength = 0.4,
-  scanlineScale = 800.0,
+  lineSpacing = 0.05, // World units between scanlines
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
@@ -189,6 +210,8 @@ export default function ScreenShaderMaterial({
   emissiveBoost = 1.2,
   testTexture,
   terminalTexture,
+  screenWidth = 1.0,
+  screenHeight = 1.0,
   ...props
 }: ScreenShaderMaterialProps) {
   // Use a static checkerboard texture for now
@@ -200,30 +223,34 @@ export default function ScreenShaderMaterial({
         uniforms: {
           screenTex: { value: terminalTexture || testTexture || checkerboard },
           scanlineStrength: { value: scanlineStrength },
-          scanlineScale: { value: scanlineScale },
+          lineSpacing: { value: lineSpacing },
           debugMode: { value: debugMode },
           cornerRoundness: { value: cornerRoundness },
           bubbleSize: { value: bubbleSize },
           edgeTransition: { value: edgeTransition },
           displacementAmount: { value: displacementAmount },
           emissiveBoost: { value: emissiveBoost },
+          screenWidth: { value: screenWidth },
+          screenHeight: { value: screenHeight },
         },
         vertexShader,
         fragmentShader,
         toneMapped: false, // Allow bright values for bloom
       }),
-    [checkerboard, testTexture, terminalTexture, scanlineStrength, scanlineScale, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount, emissiveBoost]
+    [checkerboard, testTexture, terminalTexture, scanlineStrength, lineSpacing, debugMode, cornerRoundness, bubbleSize, edgeTransition, displacementAmount, emissiveBoost, screenWidth, screenHeight]
   );
 
   // Update uniforms on prop change
   material.uniforms.scanlineStrength.value = scanlineStrength;
-  material.uniforms.scanlineScale.value = scanlineScale;
+  material.uniforms.lineSpacing.value = lineSpacing;
   material.uniforms.debugMode.value = debugMode;
   material.uniforms.cornerRoundness.value = cornerRoundness;
   material.uniforms.bubbleSize.value = bubbleSize;
   material.uniforms.edgeTransition.value = edgeTransition;
   material.uniforms.displacementAmount.value = displacementAmount;
   material.uniforms.emissiveBoost.value = emissiveBoost;
+  material.uniforms.screenWidth.value = screenWidth;
+  material.uniforms.screenHeight.value = screenHeight;
   
   // Update texture - priority: terminalTexture > testTexture > checkerboard
   if (terminalTexture) {

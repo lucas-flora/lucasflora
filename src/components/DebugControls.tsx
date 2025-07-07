@@ -8,13 +8,13 @@ interface DebugControlsProps {
   housingZ: number;
   screenZ: number;
   onScanlineStrengthChange: (value: number) => void;
-  onScanlineScaleChange: (value: number) => void;
+  onLineSpacingChange: (value: number) => void;
   onCornerRoundnessChange: (value: number) => void;
   onBubbleSizeChange: (value: number) => void;
   onEdgeTransitionChange: (value: number) => void;
   onDisplacementAmountChange: (value: number) => void;
   scanlineStrength: number;
-  scanlineScale: number;
+  lineSpacing: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
@@ -46,13 +46,13 @@ export default function DebugControls({
   housingZ, 
   screenZ,
   onScanlineStrengthChange,
-  onScanlineScaleChange,
+  onLineSpacingChange,
   onCornerRoundnessChange,
   onBubbleSizeChange,
   onEdgeTransitionChange,
   onDisplacementAmountChange,
   scanlineStrength,
-  scanlineScale,
+  lineSpacing,
   cornerRoundness,
   bubbleSize,
   edgeTransition,
@@ -164,15 +164,15 @@ export default function DebugControls({
         
         <div>
           <label className="block text-xs text-gray-300 mb-1">
-            Scanline Scale: {scanlineScale.toFixed(0)}
+            Line Spacing: {lineSpacing.toFixed(3)} world units
           </label>
           <input
             type="range"
-            min={100}
-            max={2000}
-            step={50}
-            value={scanlineScale}
-            onChange={(e) => onScanlineScaleChange(parseFloat(e.target.value))}
+            min={0.005}
+            max={0.1}
+            step={0.005}
+            value={lineSpacing}
+            onChange={(e) => onLineSpacingChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

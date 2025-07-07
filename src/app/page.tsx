@@ -51,7 +51,7 @@ function MainScene({
   marginBottomPx,
   marginLeftPx,
   scanlineStrength,
-  scanlineScale,
+  lineSpacing,
   cornerRoundness,
   bubbleSize,
   edgeTransition,
@@ -74,7 +74,7 @@ function MainScene({
   marginBottomPx: number;
   marginLeftPx: number;
   scanlineStrength: number;
-  scanlineScale: number;
+  lineSpacing: number;
   cornerRoundness: number;
   bubbleSize: number;
   edgeTransition: number;
@@ -105,7 +105,7 @@ function MainScene({
         marginBottomPx={marginBottomPx}
         marginLeftPx={marginLeftPx}
         scanlineStrength={scanlineStrength}
-        scanlineScale={scanlineScale}
+        lineSpacing={lineSpacing}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
@@ -160,12 +160,12 @@ export default function Home() {
   const [terminalYOffset, setTerminalYOffset] = useState(100);
 
   // Map parameters
-  const [cornerRoundness, setCornerRoundness] = useState(0.4);
-  const [bubbleSize, setBubbleSize] = useState(0.75);
-  const [edgeTransition, setEdgeTransition] = useState(0.26);
-  const [displacementAmount, setDisplacementAmount] = useState(0.10);
-  const [scanlineStrength, setScanlineStrength] = useState(0.35);
-  const [scanlineScale, setScanlineScale] = useState(450.0);
+  const [cornerRoundness, setCornerRoundness] = useState(0.5);
+  const [bubbleSize, setBubbleSize] = useState(0.84);
+  const [edgeTransition, setEdgeTransition] = useState(0.73);
+  const [displacementAmount, setDisplacementAmount] = useState(0.30);
+  const [scanlineStrength, setScanlineStrength] = useState(0.1);
+  const [lineSpacing, setLineSpacing] = useState(0.015); // World units between scanlines
   const [emissiveBoost, setEmissiveBoost] = useState(1.2);
 
   // Bloom parameters - Better defaults for the new setup
@@ -231,7 +231,7 @@ export default function Home() {
           marginBottomPx={marginBottomPx}
           marginLeftPx={marginLeftPx}
           scanlineStrength={scanlineStrength}
-          scanlineScale={scanlineScale}
+          lineSpacing={lineSpacing}
           cornerRoundness={cornerRoundness}
           bubbleSize={bubbleSize}
           edgeTransition={edgeTransition}
@@ -257,14 +257,14 @@ export default function Home() {
         onHousingZChange={setHousingZ}
         onScreenZChange={setScreenZ}
         scanlineStrength={scanlineStrength}
-        scanlineScale={scanlineScale}
+        lineSpacing={lineSpacing}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
         emissiveBoost={emissiveBoost}
         onScanlineStrengthChange={setScanlineStrength}
-        onScanlineScaleChange={setScanlineScale}
+        onLineSpacingChange={setLineSpacing}
         onCornerRoundnessChange={setCornerRoundness}
         onBubbleSizeChange={setBubbleSize}
         onEdgeTransitionChange={setEdgeTransition}

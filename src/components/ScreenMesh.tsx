@@ -10,7 +10,7 @@ interface ScreenMeshProps {
   yOffset: number;
   debugMode?: number; // 0 = normal, 1 = bubble map, 2 = scanlines, 3 = checkerboard, 4 = scanline test
   scanlineStrength?: number;
-  scanlineScale?: number;
+  lineSpacing?: number;
   cornerRoundness?: number;
   bubbleSize?: number;
   edgeTransition?: number;
@@ -25,7 +25,7 @@ export default function ScreenMesh({
   yOffset, 
   debugMode = 0,
   scanlineStrength = 0.4,
-  scanlineScale = 800.0,
+  lineSpacing = 20.0, // Now in world units
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
@@ -53,13 +53,15 @@ export default function ScreenMesh({
       <ScreenShaderMaterial 
         debugMode={debugMode}
         scanlineStrength={scanlineStrength}
-        scanlineScale={scanlineScale}
+        lineSpacing={lineSpacing}
         cornerRoundness={cornerRoundness}
         bubbleSize={bubbleSize}
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
         emissiveBoost={emissiveBoost}
         terminalTexture={terminalTexture || undefined}
+        screenWidth={width}
+        screenHeight={height}
       />
     </mesh>
   );
