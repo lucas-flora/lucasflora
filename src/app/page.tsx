@@ -139,6 +139,9 @@ export default function Home() {
   const [isTyping, setIsTyping] = useState(false);
   const { supported: webGPUSupported, loading: webGPULoading } = useWebGPU();
 
+  // Debug menu visibility state
+  const [showDebugControls, setShowDebugControls] = useState(false);
+
   // Window size state and resize handler
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
@@ -149,6 +152,21 @@ export default function Home() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Keyboard shortcut for debug controls (Ctrl+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        const newState = !showDebugControls;
+        setShowDebugControls(newState);
+        console.log(`Debug controls ${newState ? 'shown' : 'hidden'}`);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showDebugControls]);
 
   // Debug positioning state (removed camera - using fixed position)
   const [housingZ, setHousingZ] = useState(-0.2);
@@ -166,13 +184,13 @@ export default function Home() {
   const [displacementAmount, setDisplacementAmount] = useState(0.30);
   const [scanlineStrength, setScanlineStrength] = useState(0.1);
   const [lineSpacing, setLineSpacing] = useState(0.015); // World units between scanlines
-  const [emissiveBoost, setEmissiveBoost] = useState(1.2);
+  const [emissiveBoost, setEmissiveBoost] = useState(1.1);
 
   // Bloom parameters - Better defaults for the new setup
-  const [bloomIntensity, setBloomIntensity] = useState(2.5);
+  const [bloomIntensity, setBloomIntensity] = useState(1.90);
   const [bloomKernelSize, setBloomKernelSize] = useState(3);
   const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
-  const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.3);
+  const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.4);
 
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;
@@ -251,40 +269,44 @@ export default function Home() {
       </Canvas>
 
       {/* Debug Controls */}
-      <DebugControls
-        housingZ={housingZ}
-        screenZ={screenZ}
-        onHousingZChange={setHousingZ}
-        onScreenZChange={setScreenZ}
-        scanlineStrength={scanlineStrength}
-        lineSpacing={lineSpacing}
-        cornerRoundness={cornerRoundness}
-        bubbleSize={bubbleSize}
-        edgeTransition={edgeTransition}
-        displacementAmount={displacementAmount}
-        emissiveBoost={emissiveBoost}
-        onScanlineStrengthChange={setScanlineStrength}
-        onLineSpacingChange={setLineSpacing}
-        onCornerRoundnessChange={setCornerRoundness}
-        onBubbleSizeChange={setBubbleSize}
-        onEdgeTransitionChange={setEdgeTransition}
-        onDisplacementAmountChange={setDisplacementAmount}
-        onEmissiveBoostChange={setEmissiveBoost}
-        debugMode={debugMode}
-        onDebugModeChange={setDebugMode}
-        bloomIntensity={bloomIntensity}
-        bloomKernelSize={bloomKernelSize}
-        bloomLuminanceThreshold={bloomLuminanceThreshold}
-        bloomLuminanceSmoothing={bloomLuminanceSmoothing}
-        onBloomIntensityChange={setBloomIntensity}
-        onBloomKernelSizeChange={setBloomKernelSize}
-        onBloomLuminanceThresholdChange={setBloomLuminanceThreshold}
-        onBloomLuminanceSmoothingChange={setBloomLuminanceSmoothing}
-        hideTerminalOverlay={hideTerminalOverlay}
-        terminalYOffset={terminalYOffset}
-        onHideTerminalOverlayChange={setHideTerminalOverlay}
-        onTerminalYOffsetChange={setTerminalYOffset}
-      />
+      {showDebugControls && (
+        <DebugControls
+          housingZ={housingZ}
+          screenZ={screenZ}
+          onHousingZChange={setHousingZ}
+          onScreenZChange={setScreenZ}
+          scanlineStrength={scanlineStrength}
+          lineSpacing={lineSpacing}
+          cornerRoundness={cornerRoundness}
+          bubbleSize={bubbleSize}
+          edgeTransition={edgeTransition}
+          displacementAmount={displacementAmount}
+          emissiveBoost={emissiveBoost}
+          onScanlineStrengthChange={setScanlineStrength}
+          onLineSpacingChange={setLineSpacing}
+          onCornerRoundnessChange={setCornerRoundness}
+          onBubbleSizeChange={setBubbleSize}
+          onEdgeTransitionChange={setEdgeTransition}
+          onDisplacementAmountChange={setDisplacementAmount}
+          onEmissiveBoostChange={setEmissiveBoost}
+          debugMode={debugMode}
+          onDebugModeChange={setDebugMode}
+          bloomIntensity={bloomIntensity}
+          bloomKernelSize={bloomKernelSize}
+          bloomLuminanceThreshold={bloomLuminanceThreshold}
+          bloomLuminanceSmoothing={bloomLuminanceSmoothing}
+          onBloomIntensityChange={setBloomIntensity}
+          onBloomKernelSizeChange={setBloomKernelSize}
+          onBloomLuminanceThresholdChange={setBloomLuminanceThreshold}
+          onBloomLuminanceSmoothingChange={setBloomLuminanceSmoothing}
+          hideTerminalOverlay={hideTerminalOverlay}
+          terminalYOffset={terminalYOffset}
+          onHideTerminalOverlayChange={setHideTerminalOverlay}
+          onTerminalYOffsetChange={setTerminalYOffset}
+        />
+      )}
+
+
 
       {/* Terminal overlay - now with visibility control */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
