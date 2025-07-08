@@ -238,6 +238,9 @@ export default function Monitor3D({
   const fullFrameWidth = safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight;
   const fullFrameHeight = safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom;
 
+  // Base housing depth (we doubled it in the boxGeometry args)
+  const baseDepth = HOUSING_DEPTH * 2;
+
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
     const shape = new THREE.Shape();
@@ -256,13 +259,15 @@ export default function Monitor3D({
     shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
 
     const geometry = new THREE.ExtrudeGeometry(shape, {
-      depth: HOUSING_DEPTH * 5,
+      depth: HOUSING_DEPTH * 10,   // Make cut much deeper
       bevelEnabled: true,
-      bevelSegments: 3,
+      bevelSegments: 4,
+      curveSegments: 8,
       bevelSize: bevelSize,
       bevelThickness: bevelSize,
     });
-    geometry.translate(0, 0, -HOUSING_DEPTH * 2.5);
+    geometry.translate(0, 0, -HOUSING_DEPTH * 5);  // Shift cutter further forward
+    geometry.computeVertexNormals();
     return geometry;
     
   }, [safeScreenWorldWidth, safeScreenWorldHeight, cutoutRadius, bevelSize]);
@@ -304,7 +309,7 @@ export default function Monitor3D({
   }, [frameNoiseScale, safeScreenWorldWidth, safeScreenWorldHeight, screenCutoutShape]);
 
   return (
-    <group ref={monitorRef} position={[xOffset, yOffset, 0 - HOUSING_DEPTH / 2]}>
+    <group ref={monitorRef} position={[xOffset, yOffset, -baseDepth / 2]}>
       {/* Frame using CSG subtraction */}
       <mesh ref={frameMeshRef} castShadow receiveShadow>
         <Geometry>
@@ -313,7 +318,10 @@ export default function Monitor3D({
               args={[
                 safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
                 safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
-                HOUSING_DEPTH,
+                HOUSING_DEPTH * 2,    // Made base twice as deep
+                8,
+                8,
+                8
               ]}
             />
           </Base>
