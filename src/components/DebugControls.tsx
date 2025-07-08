@@ -21,6 +21,10 @@ interface DebugControlsProps {
   displacementAmount: number;
   emissiveBoost: number;
   onEmissiveBoostChange: (value: number) => void;
+  cutoutRadius: number;
+  bevelSize: number;
+  onCutoutRadiusChange: (value: number) => void;
+  onBevelSizeChange: (value: number) => void;
   // Debug mode
   debugMode: number;
   onDebugModeChange: (value: number) => void;
@@ -59,6 +63,10 @@ export default function DebugControls({
   displacementAmount,
   emissiveBoost,
   onEmissiveBoostChange,
+  cutoutRadius,
+  bevelSize,
+  onCutoutRadiusChange,
+  onBevelSizeChange,
   debugMode,
   onDebugModeChange,
   bloomIntensity,
@@ -113,6 +121,36 @@ export default function DebugControls({
             step={0.01}
             value={housingZ}
             onChange={(e) => onHousingZChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Cutout Radius (world units): {cutoutRadius.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={0.5}
+            step={0.001}
+            value={cutoutRadius}
+            onChange={(e) => onCutoutRadiusChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Bevel Size (world units): {bevelSize.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={0.1}
+            step={0.001}
+            value={bevelSize}
+            onChange={(e) => onBevelSizeChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

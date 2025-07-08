@@ -66,7 +66,9 @@ function MainScene({
   isTyping,
   debugMode,
   screenWorldWidth,
-  screenWorldHeight
+  screenWorldHeight,
+  cutoutRadius,
+  bevelSize,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -90,6 +92,8 @@ function MainScene({
   debugMode: number;
   screenWorldWidth: number;
   screenWorldHeight: number;
+  cutoutRadius: number;
+  bevelSize: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -115,6 +119,8 @@ function MainScene({
         currentInput={currentInput}
         isTyping={isTyping}
         debugMode={debugMode}
+        cutoutRadius={cutoutRadius}
+        bevelSize={bevelSize}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -172,6 +178,10 @@ export default function Home() {
   const [housingZ, setHousingZ] = useState(-0.2);
   const [screenZ, setScreenZ] = useState(-0.05);
   const [debugMode, setDebugMode] = useState(0);
+
+  // Added debug states for cutoutRadius and bevelSize
+  const [cutoutRadius, setCutoutRadius] = useState(0.2);
+  const [bevelSize, setBevelSize] = useState(0.01);
 
   // Terminal display state
   const [hideTerminalOverlay, setHideTerminalOverlay] = useState(true);
@@ -265,6 +275,8 @@ export default function Home() {
           debugMode={debugMode}
           screenWorldWidth={screenWorldWidth}
           screenWorldHeight={screenWorldHeight}
+          cutoutRadius={cutoutRadius}
+          bevelSize={bevelSize}
         />
       </Canvas>
 
@@ -303,6 +315,10 @@ export default function Home() {
           terminalYOffset={terminalYOffset}
           onHideTerminalOverlayChange={setHideTerminalOverlay}
           onTerminalYOffsetChange={setTerminalYOffset}
+          cutoutRadius={cutoutRadius}
+          bevelSize={bevelSize}
+          onCutoutRadiusChange={setCutoutRadius}
+          onBevelSizeChange={setBevelSize}
         />
       )}
 

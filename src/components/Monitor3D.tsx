@@ -5,9 +5,10 @@ import { useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
 import ScreenMesh from './ScreenMesh';
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from '@react-three/drei';
+// import { RoundedBoxGeometry } from '@react-three/drei';
 import { TerminalEntry } from '../lib/terminal-types';
 import { useTerminalCanvas } from '../utils/useTerminalCanvas';
+import { Geometry, Base, Subtraction } from '@react-three/csg';
 // Fixed thickness of monitor housing (front face to back)
 const HOUSING_DEPTH = 0.3;
 
@@ -28,12 +29,14 @@ interface Monitor3DProps {
   currentInput?: string;
   isTyping?: boolean;
   debugMode?: number;
+  cutoutRadius?: number;
+  bevelSize?: number;
 }
 
 // Adjustable bump map intensity
 const bumpScale = 2.0; // Increase for more pronounced texture
-const filletRadius = 0.02; // Fillet radius for rounded edges
-const filletSmoothness = 6; // Number of segments for smoothness
+// const filletRadius = 0.02; // Fillet radius for rounded edges
+// const filletSmoothness = 6; // Number of segments for smoothness
 
 // Utility to generate a simple noise texture for bump mapping
 function generateNoiseTexture(size = 128) {
@@ -73,7 +76,9 @@ export default function Monitor3D({
   terminalEntries = [],
   currentInput = '',
   isTyping = false,
-  debugMode = 0
+  debugMode = 0,
+  cutoutRadius = 0.05,
+  bevelSize = 0.01,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
 
@@ -180,9 +185,9 @@ export default function Monitor3D({
   // Ensure all geometry dimensions are valid and above minimum thresholds
   // RoundedBoxGeometry requires dimensions > 0 and radius < smallest dimension / 2
   const minGeometrySize = 0.001; // Minimum geometry dimension in world units
-  const safeRadius = Math.min(filletRadius, 
-    Math.min(thickFrameTop, thickFrameBottom, thickFrameLeft, thickFrameRight, HOUSING_DEPTH) / 3
-  );
+  // const safeRadius = Math.min(filletRadius, 
+  //   Math.min(thickFrameTop, thickFrameBottom, thickFrameLeft, thickFrameRight, HOUSING_DEPTH) / 3
+  // );
 
   // Validate all frame dimensions
   const safeThickFrameTop = Math.max(thickFrameTop, minGeometrySize);
@@ -192,58 +197,53 @@ export default function Monitor3D({
   const safeScreenWorldWidth = Math.max(screenWorldWidth, minGeometrySize);
   const safeScreenWorldHeight = Math.max(screenWorldHeight, minGeometrySize);
 
+  // Memoize the extruded screen cutout geometry for the CSG subtraction
+  const screenCutoutShape = useMemo(() => {
+    const shape = new THREE.Shape();
+    const w = safeScreenWorldWidth;
+    const h = safeScreenWorldHeight;
+    const r = Math.min(cutoutRadius, Math.min(w, h) / 2); // Rounded corner radius in world units
+
+    shape.moveTo(-w / 2 + r, -h / 2);
+    shape.lineTo(w / 2 - r, -h / 2);
+    shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    shape.lineTo(w / 2, h / 2 - r);
+    shape.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+    shape.lineTo(-w / 2 + r, h / 2);
+    shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+    shape.lineTo(-w / 2, -h / 2 + r);
+    shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: HOUSING_DEPTH * 5,
+      bevelEnabled: true,
+      bevelSegments: 3,
+      bevelSize: bevelSize,
+      bevelThickness: bevelSize,
+    });
+    geometry.translate(0, 0, -HOUSING_DEPTH * 2.5);
+    return geometry;
+    
+  }, [safeScreenWorldWidth, safeScreenWorldHeight, cutoutRadius, bevelSize]);
+
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, 0 - HOUSING_DEPTH / 2]}>
-      {/* Top frame */}
-      <mesh position={[0, safeScreenWorldHeight / 2 + safeThickFrameTop / 2, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
-            safeThickFrameTop,
-            HOUSING_DEPTH
-          ]}
-          radius={safeRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      {/* Bottom frame */}
-      <mesh position={[0, -safeScreenWorldHeight / 2 - safeThickFrameBottom / 2, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
-            safeThickFrameBottom,
-            HOUSING_DEPTH
-          ]}
-          radius={safeRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      {/* Left frame */}
-      <mesh position={[-safeScreenWorldWidth / 2 - safeThickFrameLeft / 2, 0, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            safeThickFrameLeft,
-            safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
-            HOUSING_DEPTH
-          ]}
-          radius={safeRadius}
-          smoothness={filletSmoothness}
-        />
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      {/* Right frame */}
-      <mesh position={[safeScreenWorldWidth / 2 + safeThickFrameRight / 2, 0, 0]} castShadow={true} receiveShadow={true}>
-        <RoundedBoxGeometry
-          args={[
-            safeThickFrameRight,
-            safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
-            HOUSING_DEPTH
-          ]}
-          radius={safeRadius}
-          smoothness={filletSmoothness}
-        />
+      {/* Frame using CSG subtraction */}
+      <mesh castShadow receiveShadow>
+        <Geometry>
+          <Base>
+            <boxGeometry
+              args={[
+                safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
+                safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
+                HOUSING_DEPTH,
+              ]}
+            />
+          </Base>
+          <Subtraction>
+            <primitive object={screenCutoutShape} />
+          </Subtraction>
+        </Geometry>
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Screen area - RECESSED into housing */}
