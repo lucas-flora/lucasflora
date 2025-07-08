@@ -47,12 +47,21 @@ interface DebugControlsProps {
   frameNoiseStrength: number;
   onFrameNoiseScaleChange: (value: number) => void;
   onFrameNoiseStrengthChange: (value: number) => void;
+  // Key light controls (relative)
+  keyLightIntensity: number;
+  keyLightXRel: number;
+  keyLightYRel: number;
+  keyLightZRel: number;
+  onKeyLightIntensityChange: (value: number) => void;
+  onKeyLightXRelChange: (value: number) => void;
+  onKeyLightYRelChange: (value: number) => void;
+  onKeyLightZRelChange: (value: number) => void;
 }
 
-export default function DebugControls({ 
-  onHousingZChange, 
-  onScreenZChange, 
-  housingZ, 
+export default function DebugControls({
+  onHousingZChange,
+  onScreenZChange,
+  housingZ,
   screenZ,
   onScanlineStrengthChange,
   onLineSpacingChange,
@@ -89,7 +98,16 @@ export default function DebugControls({
   frameNoiseScale,
   frameNoiseStrength,
   onFrameNoiseScaleChange,
-  onFrameNoiseStrengthChange
+  onFrameNoiseStrengthChange,
+  // Key light
+  keyLightXRel,
+  keyLightYRel,
+  keyLightZRel,
+  keyLightIntensity,
+  onKeyLightIntensityChange,
+  onKeyLightXRelChange,
+  onKeyLightYRelChange,
+  onKeyLightZRelChange,
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -325,6 +343,67 @@ export default function DebugControls({
             step={0.01}
             value={frameNoiseStrength}
             onChange={(e) => onFrameNoiseStrengthChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+
+        {/* Key Light Intensity */}
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Key Light Intensity: {keyLightIntensity.toFixed(1)}
+          </label>
+          <input
+            type="range"
+            min={0.1}
+            max={12}
+            step={0.1}
+            value={keyLightIntensity}
+            onChange={e => onKeyLightIntensityChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+      
+
+        {/* Key Light Position */}
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Key Light X Rel: {keyLightXRel.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={-1}
+            max={1}
+            step={0.01}
+            value={keyLightXRel}
+            onChange={(e) => onKeyLightXRelChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Key Light Y Rel: {keyLightYRel.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={-1}
+            max={1}
+            step={0.01}
+            value={keyLightYRel}
+            onChange={(e) => onKeyLightYRelChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Key Light Z Rel: {keyLightZRel.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={keyLightZRel}
+            onChange={(e) => onKeyLightZRelChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

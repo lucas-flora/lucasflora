@@ -71,6 +71,10 @@ function MainScene({
   bevelSize,
   frameNoiseScale,
   frameNoiseStrength,
+  keyLightXRel,
+  keyLightYRel,
+  keyLightZRel,
+  keyLightIntensity,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -98,6 +102,10 @@ function MainScene({
   bevelSize: number;
   frameNoiseScale: number;
   frameNoiseStrength: number;
+  keyLightXRel: number;
+  keyLightYRel: number;
+  keyLightZRel: number;
+  keyLightIntensity: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -127,6 +135,10 @@ function MainScene({
         bevelSize={bevelSize}
         frameNoiseScale={frameNoiseScale}
         frameNoiseStrength={frameNoiseStrength}
+        keyLightXRel={keyLightXRel}
+        keyLightYRel={keyLightYRel}
+        keyLightZRel={keyLightZRel}
+        keyLightIntensity={keyLightIntensity}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -212,6 +224,11 @@ export default function Home() {
   const [frameNoiseScale, setFrameNoiseScale] = useState(.9);
   // Temporarily increase the default for testing
   const [frameNoiseStrength, setFrameNoiseStrength] = useState(0.2);
+  // Key light relative position
+  const [keyLightIntensity, setKeyLightIntensity] = useState(1.6);
+  const [keyLightXRel, setKeyLightXRel] = useState(-0.880);
+  const [keyLightYRel, setKeyLightYRel] = useState(0.540);
+  const [keyLightZRel, setKeyLightZRel] = useState(0.560);
 
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;
@@ -290,6 +307,10 @@ export default function Home() {
           bevelSize={bevelSize}
           frameNoiseScale={frameNoiseScale}
           frameNoiseStrength={frameNoiseStrength}
+          keyLightIntensity={keyLightIntensity}
+          keyLightXRel={keyLightXRel}
+          keyLightYRel={keyLightYRel}
+          keyLightZRel={keyLightZRel}
         />
       </Canvas>
 
@@ -336,6 +357,15 @@ export default function Home() {
           frameNoiseStrength={frameNoiseStrength}
           onFrameNoiseScaleChange={setFrameNoiseScale}
           onFrameNoiseStrengthChange={setFrameNoiseStrength}
+          // key light
+          keyLightXRel={keyLightXRel}
+          keyLightYRel={keyLightYRel}
+          keyLightZRel={keyLightZRel}
+          keyLightIntensity={keyLightIntensity}
+          onKeyLightIntensityChange={setKeyLightIntensity}
+          onKeyLightXRelChange={setKeyLightXRel}
+          onKeyLightYRelChange={setKeyLightYRel}
+          onKeyLightZRelChange={setKeyLightZRel}
         />
       )}
 

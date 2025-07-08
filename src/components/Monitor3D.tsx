@@ -55,6 +55,11 @@ interface Monitor3DProps {
   bevelSize?: number;
   frameNoiseScale: number;
   frameNoiseStrength: number;
+  // Key light relative position ratios
+  keyLightIntensity: number;
+  keyLightXRel: number;
+  keyLightYRel: number;
+  keyLightZRel: number;
 }
 
 // Adjustable bump map intensity
@@ -105,6 +110,10 @@ export default function Monitor3D({
   bevelSize = 0.01,
   frameNoiseScale,
   frameNoiseStrength,
+  keyLightIntensity = 4,
+  keyLightXRel = -0.33,
+  keyLightYRel = 0.412,
+  keyLightZRel = 1.923,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const frameMeshRef = useRef<THREE.Mesh>(null);
@@ -225,6 +234,9 @@ export default function Monitor3D({
   const safeThickFrameRight = Math.max(thickFrameRight, minGeometrySize);
   const safeScreenWorldWidth = Math.max(screenWorldWidth, minGeometrySize);
   const safeScreenWorldHeight = Math.max(screenWorldHeight, minGeometrySize);
+  // Compute full housing dims for light positioning
+  const fullFrameWidth = safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight;
+  const fullFrameHeight = safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom;
 
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
@@ -331,9 +343,14 @@ export default function Monitor3D({
       {/* Lighting */}
       {/* Key light */}
       <pointLight
-        position={[-1,1,5]}
+        // Position the light relative to current frame and camera size:
+        position={[
+          fullFrameWidth * keyLightXRel,
+          fullFrameHeight * keyLightYRel,
+          (camera as THREE.PerspectiveCamera).position.z * keyLightZRel,
+        ]}
         color="#ffffff"
-        intensity={4}
+        intensity={keyLightIntensity}
         distance={10}
         decay={1}
         castShadow
