@@ -42,6 +42,11 @@ interface DebugControlsProps {
   terminalYOffset: number;
   onHideTerminalOverlayChange: (value: boolean) => void;
   onTerminalYOffsetChange: (value: number) => void;
+  // Frame noise controls
+  frameNoiseScale: number;
+  frameNoiseStrength: number;
+  onFrameNoiseScaleChange: (value: number) => void;
+  onFrameNoiseStrengthChange: (value: number) => void;
 }
 
 export default function DebugControls({ 
@@ -80,7 +85,11 @@ export default function DebugControls({
   hideTerminalOverlay,
   terminalYOffset,
   onHideTerminalOverlayChange,
-  onTerminalYOffsetChange
+  onTerminalYOffsetChange,
+  frameNoiseScale,
+  frameNoiseStrength,
+  onFrameNoiseScaleChange,
+  onFrameNoiseStrengthChange
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -289,6 +298,36 @@ export default function DebugControls({
             className="w-full"
           />
         </div>
+
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Frame Noise Scale: {frameNoiseScale.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min={0.1}
+            max={1.0}
+            step={0.01}
+            value={frameNoiseScale}
+            onChange={(e) => onFrameNoiseScaleChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Frame Noise Strength: {frameNoiseStrength.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={0.0}
+            max={1.0}
+            step={0.01}
+            value={frameNoiseStrength}
+            onChange={(e) => onFrameNoiseStrengthChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
         
         <div className="border-t border-gray-600 pt-3">
           <h4 className="text-xs font-bold text-gray-300 mb-2">Bloom Post-Processing</h4>
@@ -394,4 +433,4 @@ export default function DebugControls({
       </div>
     </div>
   );
-} 
+}

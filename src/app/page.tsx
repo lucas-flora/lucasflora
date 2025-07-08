@@ -69,6 +69,8 @@ function MainScene({
   screenWorldHeight,
   cutoutRadius,
   bevelSize,
+  frameNoiseScale,
+  frameNoiseStrength,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -94,6 +96,8 @@ function MainScene({
   screenWorldHeight: number;
   cutoutRadius: number;
   bevelSize: number;
+  frameNoiseScale: number;
+  frameNoiseStrength: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -121,6 +125,8 @@ function MainScene({
         debugMode={debugMode}
         cutoutRadius={cutoutRadius}
         bevelSize={bevelSize}
+        frameNoiseScale={frameNoiseScale}
+        frameNoiseStrength={frameNoiseStrength}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -202,6 +208,11 @@ export default function Home() {
   const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.4);
 
+  // Added frame noise parameters (updated per instructions)
+  const [frameNoiseScale, setFrameNoiseScale] = useState(.9);
+  // Temporarily increase the default for testing
+  const [frameNoiseStrength, setFrameNoiseStrength] = useState(0.2);
+
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;
   const marginRightPx = 12;
@@ -277,6 +288,8 @@ export default function Home() {
           screenWorldHeight={screenWorldHeight}
           cutoutRadius={cutoutRadius}
           bevelSize={bevelSize}
+          frameNoiseScale={frameNoiseScale}
+          frameNoiseStrength={frameNoiseStrength}
         />
       </Canvas>
 
@@ -319,6 +332,10 @@ export default function Home() {
           bevelSize={bevelSize}
           onCutoutRadiusChange={setCutoutRadius}
           onBevelSizeChange={setBevelSize}
+          frameNoiseScale={frameNoiseScale}
+          frameNoiseStrength={frameNoiseStrength}
+          onFrameNoiseScaleChange={setFrameNoiseScale}
+          onFrameNoiseStrengthChange={setFrameNoiseStrength}
         />
       )}
 

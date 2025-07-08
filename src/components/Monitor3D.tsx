@@ -1,10 +1,32 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
 import ScreenMesh from './ScreenMesh';
+// import MonitorShaderMaterial from './MonitorShaderMaterial';
 import * as THREE from 'three';
+
+// Utility to generate a simple noise texture for bump mapping
+function generateNoiseTexture(size = 512) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const imgData = ctx.createImageData(size, size);
+  for (let i = 0; i < size * size * 4; i += 4) {
+    // full-range noise 0–255
+    const val = Math.floor(Math.random() * 256);
+    imgData.data[i] = val;
+    imgData.data[i + 1] = val;
+    imgData.data[i + 2] = val;
+    imgData.data[i + 3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  const texture = new THREE.Texture(canvas);
+  texture.needsUpdate = true;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  return texture;
+}
 // import { RoundedBoxGeometry } from '@react-three/drei';
 import { TerminalEntry } from '../lib/terminal-types';
 import { useTerminalCanvas } from '../utils/useTerminalCanvas';
@@ -31,40 +53,42 @@ interface Monitor3DProps {
   debugMode?: number;
   cutoutRadius?: number;
   bevelSize?: number;
+  frameNoiseScale: number;
+  frameNoiseStrength: number;
 }
 
 // Adjustable bump map intensity
-const bumpScale = 2.0; // Increase for more pronounced texture
+// const bumpScale = 2.0; // Increase for more pronounced texture
 // const filletRadius = 0.02; // Fillet radius for rounded edges
 // const filletSmoothness = 6; // Number of segments for smoothness
 
-// Utility to generate a simple noise texture for bump mapping
-function generateNoiseTexture(size = 128) {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return new THREE.Texture(); // fallback: empty texture
-  const imgData = ctx.createImageData(size, size);
-  for (let i = 0; i < size * size * 4; i += 4) {
-    const val = Math.floor(Math.random() * 64) + 192; // subtle noise
-    imgData.data[i] = val;
-    imgData.data[i + 1] = val;
-    imgData.data[i + 2] = val;
-    imgData.data[i + 3] = 255;
-  }
-  ctx.putImageData(imgData, 0, 0);
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(8, 8);
-  return texture;
-}
+// // Utility to generate a simple noise texture for bump mapping
+// function generateNoiseTexture(size = 128) {
+//   const canvas = document.createElement('canvas');
+//   canvas.width = canvas.height = size;
+//   const ctx = canvas.getContext('2d');
+//   if (!ctx) return new THREE.Texture(); // fallback: empty texture
+//   const imgData = ctx.createImageData(size, size);
+//   for (let i = 0; i < size * size * 4; i += 4) {
+//     const val = Math.floor(Math.random() * 64) + 192; // subtle noise
+//     imgData.data[i] = val;
+//     imgData.data[i + 1] = val;
+//     imgData.data[i + 2] = val;
+//     imgData.data[i + 3] = 255;
+//   }
+//   ctx.putImageData(imgData, 0, 0);
+//   const texture = new THREE.Texture(canvas);
+//   texture.needsUpdate = true;
+//   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+//   texture.repeat.set(8, 8);
+//   return texture;
+// }
 
-export default function Monitor3D({ 
-  screenZ = -0.05, 
-  marginTopPx, 
-  marginRightPx, 
-  marginBottomPx, 
+export default function Monitor3D({
+  screenZ = -0.05,
+  marginTopPx,
+  marginRightPx,
+  marginBottomPx,
   marginLeftPx,
   scanlineStrength = 0.4,
   lineSpacing = 800.0,
@@ -79,8 +103,11 @@ export default function Monitor3D({
   debugMode = 0,
   cutoutRadius = 0.05,
   bevelSize = 0.01,
+  frameNoiseScale,
+  frameNoiseStrength,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
+  const frameMeshRef = useRef<THREE.Mesh>(null);
 
   // Track window size for world-unit calculation
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -146,19 +173,21 @@ export default function Monitor3D({
   const ledY = -screenWorldHeight / 2 + ledYoffset * safeWorldPx;
   const ledZ = HOUSING_DEPTH / 2;
 
-  // Memoize the plastic material for the frame
+  // Frame material with a true noise bump map (sampled via world-space UVs)
   const frameMaterial = useMemo(() => {
-    const bumpMap = generateNoiseTexture();
-    return new THREE.MeshPhysicalMaterial({
+    const bumpMap = generateNoiseTexture(512);
+    bumpMap.repeat.set(1, 1);
+    const mat = new THREE.MeshPhysicalMaterial({
       color: '#2a2a2a',
       roughness: 0.45,
       metalness: 0.05,
       clearcoat: 0.05,
       clearcoatRoughness: 0.5,
       bumpMap,
-      bumpScale,
+      bumpScale: frameNoiseStrength,
     });
-  }, []);
+    return mat;
+  }, [frameNoiseStrength]);
 
   // Generate terminal texture using canvas rendering with safe dimensions
   const terminalTexture = useTerminalCanvas(terminalEntries, {
@@ -226,10 +255,46 @@ export default function Monitor3D({
     
   }, [safeScreenWorldWidth, safeScreenWorldHeight, cutoutRadius, bevelSize]);
 
+  // Compute world-space UVs for the frame mesh after mount/update
+  useLayoutEffect(() => {
+    const mesh = frameMeshRef.current;
+    if (!mesh) return;
+    // Ensure world transform is up-to-date
+    mesh.updateMatrixWorld(true);
+    const geom = mesh.geometry as THREE.BufferGeometry;
+    const posAttr = geom.attributes.position as THREE.BufferAttribute;
+    if (!posAttr) return;
+    const uvArray = new Float32Array(posAttr.count * 2);
+    // Reusable vectors for CPU-side world transform
+    const localPos = new THREE.Vector3();
+    const worldPos = new THREE.Vector3();
+    for (let i = 0; i < posAttr.count; i++) {
+      // Read local vertex position
+      localPos.set(
+        posAttr.getX(i),
+        posAttr.getY(i),
+        posAttr.getZ(i)
+      );
+      // Transform to world space
+      worldPos.copy(localPos).applyMatrix4(mesh.matrixWorld);
+      // Use world X/Y for absolute UVs
+      uvArray[2 * i]     = worldPos.x * frameNoiseScale;
+      uvArray[2 * i + 1] = worldPos.y * frameNoiseScale;
+    }
+    geom.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
+    geom.attributes.uv.needsUpdate = true;
+    // Ensure bumpMap repeats and uses the UVs
+    const mat = mesh.material as THREE.MeshPhysicalMaterial;
+    if (mat && mat.bumpMap) {
+      mat.bumpMap.wrapS = mat.bumpMap.wrapT = THREE.RepeatWrapping;
+    }
+  // Re-run whenever scale or the underlying CSG geometry changes
+  }, [frameNoiseScale, safeScreenWorldWidth, safeScreenWorldHeight, screenCutoutShape]);
+
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, 0 - HOUSING_DEPTH / 2]}>
       {/* Frame using CSG subtraction */}
-      <mesh castShadow receiveShadow>
+      <mesh ref={frameMeshRef} castShadow receiveShadow>
         <Geometry>
           <Base>
             <boxGeometry
@@ -266,11 +331,11 @@ export default function Monitor3D({
       {/* Lighting */}
       {/* Key light */}
       <pointLight
-        position={[-1,1,3]}
-        color="#ffb59c"
+        position={[-1,1,5]}
+        color="#ffffff"
         intensity={4}
         distance={10}
-        decay={2}
+        decay={1}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
