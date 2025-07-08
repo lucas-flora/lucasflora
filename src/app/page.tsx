@@ -75,6 +75,8 @@ function MainScene({
   keyLightYRel,
   keyLightZRel,
   keyLightIntensity,
+  ledRadiusPx,
+  ledInset,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -106,6 +108,8 @@ function MainScene({
   keyLightYRel: number;
   keyLightZRel: number;
   keyLightIntensity: number;
+  ledRadiusPx: number;
+  ledInset: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -139,6 +143,8 @@ function MainScene({
         keyLightYRel={keyLightYRel}
         keyLightZRel={keyLightZRel}
         keyLightIntensity={keyLightIntensity}
+        ledRadiusPx={ledRadiusPx}
+        ledInset={ledInset}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -230,6 +236,11 @@ export default function Home() {
   const [keyLightYRel, setKeyLightYRel] = useState(0.540);
   const [keyLightZRel, setKeyLightZRel] = useState(0.560);
 
+  // LED & surround sphere radii
+  const [ledRadiusPx, setLedRadiusPx] = useState(6);
+  const [surroundRadius, setSurroundRadius] = useState(0.1);
+  const [ledInset, setLedInset] = useState(0.005);
+
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;
   const marginRightPx = 12;
@@ -311,6 +322,9 @@ export default function Home() {
           keyLightXRel={keyLightXRel}
           keyLightYRel={keyLightYRel}
           keyLightZRel={keyLightZRel}
+          ledRadiusPx={ledRadiusPx}
+          // surroundRadius={surroundRadius}
+          ledInset={ledInset}
         />
       </Canvas>
 
@@ -366,6 +380,13 @@ export default function Home() {
           onKeyLightXRelChange={setKeyLightXRel}
           onKeyLightYRelChange={setKeyLightYRel}
           onKeyLightZRelChange={setKeyLightZRel}
+          // led and surround
+          ledRadiusPx={ledRadiusPx}
+          surroundRadius={surroundRadius}
+          onLedRadiusPxChange={setLedRadiusPx}
+          onSurroundRadiusChange={setSurroundRadius}
+          ledInset={ledInset}
+          onLedInsetChange={setLedInset}
         />
       )}
 

@@ -56,6 +56,13 @@ interface DebugControlsProps {
   onKeyLightXRelChange: (value: number) => void;
   onKeyLightYRelChange: (value: number) => void;
   onKeyLightZRelChange: (value: number) => void;
+  // LED & surround sphere controls
+  ledRadiusPx: number;
+  surroundRadius: number;
+  onLedRadiusPxChange: (value: number) => void;
+  onSurroundRadiusChange: (value: number) => void;
+  ledInset: number;
+  onLedInsetChange: (value: number) => void;
 }
 
 export default function DebugControls({
@@ -99,6 +106,8 @@ export default function DebugControls({
   frameNoiseStrength,
   onFrameNoiseScaleChange,
   onFrameNoiseStrengthChange,
+  ledInset,
+  onLedInsetChange,
   // Key light
   keyLightXRel,
   keyLightYRel,
@@ -108,6 +117,11 @@ export default function DebugControls({
   onKeyLightXRelChange,
   onKeyLightYRelChange,
   onKeyLightZRelChange,
+  // LED & surround sphere
+  ledRadiusPx,
+  // surroundRadius,
+  onLedRadiusPxChange,
+  // onSurroundRadiusChange,
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -346,6 +360,38 @@ export default function DebugControls({
             className="w-full"
           />
         </div>
+
+        {/* LED Radius */}
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            LED Radius (px): {ledRadiusPx.toFixed(1)}
+          </label>
+          <input
+            type="range"
+            min={1}
+            max={20}
+            step={0.5}
+            value={ledRadiusPx}
+            onChange={(e) => onLedRadiusPxChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        {/* LED Inset */}
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            LED Inset (world): {ledInset.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={0.1}
+            step={0.005}
+            value={ledInset}
+            onChange={e => onLedInsetChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+
 
         {/* Key Light Intensity */}
         <div>

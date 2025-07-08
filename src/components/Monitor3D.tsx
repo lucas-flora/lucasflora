@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect, useLayoutEffect } from 'react';
-import { useThree } from '@react-three/fiber';
+import { useRef, useMemo, useState, useEffect } from 'react';
+import { useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
 import ScreenMesh from './ScreenMesh';
 // import MonitorShaderMaterial from './MonitorShaderMaterial';
@@ -60,6 +60,9 @@ interface Monitor3DProps {
   keyLightXRel: number;
   keyLightYRel: number;
   keyLightZRel: number;
+  // LED indicator radius in px (will be converted to world units)
+  ledRadiusPx?: number;
+  ledInset?: number;
 }
 
 // Adjustable bump map intensity
@@ -114,9 +117,14 @@ export default function Monitor3D({
   keyLightXRel = -0.33,
   keyLightYRel = 0.412,
   keyLightZRel = 1.923,
+  ledRadiusPx = 6,
+  ledInset = 0.02,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const frameMeshRef = useRef<THREE.Mesh>(null);
+
+  // Dirty flag for UV update
+  const uvNeedsUpdate = useRef(true);
 
   // Track window size for world-unit calculation
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -172,22 +180,27 @@ export default function Monitor3D({
   const screenMeshWidth = screenWorldWidth + 0.01;
   const screenMeshHeight = screenWorldHeight + 0.01;
 
+  // Base housing depth (we doubled it in the boxGeometry args)
+  const baseDepth = HOUSING_DEPTH * 2;
+
+
   // Power LED: 8px radius LED at 48px from edges, at housing front depth
   // variables for power LED position with safe calculations
   const ledXoffset = 8;
   const ledYoffset = -18;
-  const ledRadius = 6;
-  const ledRadiusWorld = Math.max(ledRadius * safeWorldPx, 0.001); // Ensure minimum LED size
+  // Use slider for radius
+  const ledRadiusWorld = Math.max(ledRadiusPx * safeWorldPx, 0.001); // Ensure minimum LED size
   const ledX = screenWorldWidth / 2 - ledXoffset * safeWorldPx;
   const ledY = -screenWorldHeight / 2 + ledYoffset * safeWorldPx;
-  const ledZ = HOUSING_DEPTH / 2;
-
+  // Determine how far back from the front face the LED sits:
+  // const ledInset = 0.02; // or expose as a prop/slider
+  const ledZ = baseDepth / 2 - ledInset;
   // Frame material with a true noise bump map (sampled via world-space UVs)
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture(512);
     bumpMap.repeat.set(1, 1);
     const mat = new THREE.MeshPhysicalMaterial({
-      color: '#2a2a2a',
+      color: '#9d8d7c',
       roughness: 0.45,
       metalness: 0.05,
       clearcoat: 0.05,
@@ -197,6 +210,44 @@ export default function Monitor3D({
     });
     return mat;
   }, [frameNoiseStrength]);
+
+  // Update world-space UVs for the frame mesh in a useFrame hook
+  // This replaces the old useLayoutEffect UV update
+  // Only runs when uvNeedsUpdate.current is true
+  // Placed after frameMaterial to ensure correct dependencies
+  useFrame(() => {
+    if (!uvNeedsUpdate.current) return;
+
+    const mesh = frameMeshRef.current;
+    if (!mesh) return;
+
+    mesh.updateMatrixWorld(true);
+
+    const geom = mesh.geometry as THREE.BufferGeometry;
+    const posAttr = geom.attributes.position as THREE.BufferAttribute;
+    if (!posAttr) return;
+
+    const uvArray = new Float32Array(posAttr.count * 2);
+    const localPos = new THREE.Vector3();
+    const worldPos = new THREE.Vector3();
+
+    for (let i = 0; i < posAttr.count; i++) {
+      localPos.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+      worldPos.copy(localPos).applyMatrix4(mesh.matrixWorld);
+      uvArray[2 * i] = worldPos.x * frameNoiseScale;
+      uvArray[2 * i + 1] = worldPos.y * frameNoiseScale;
+    }
+
+    geom.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
+    geom.attributes.uv.needsUpdate = true;
+
+    const mat = mesh.material as THREE.MeshPhysicalMaterial;
+    if (mat && mat.bumpMap) {
+      mat.bumpMap.wrapS = mat.bumpMap.wrapT = THREE.RepeatWrapping;
+    }
+
+    uvNeedsUpdate.current = false;
+  });
 
   // Generate terminal texture using canvas rendering with safe dimensions
   const terminalTexture = useTerminalCanvas(terminalEntries, {
@@ -238,8 +289,6 @@ export default function Monitor3D({
   const fullFrameWidth = safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight;
   const fullFrameHeight = safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom;
 
-  // Base housing depth (we doubled it in the boxGeometry args)
-  const baseDepth = HOUSING_DEPTH * 2;
 
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
@@ -269,43 +318,13 @@ export default function Monitor3D({
     geometry.translate(0, 0, -HOUSING_DEPTH * 5);  // Shift cutter further forward
     geometry.computeVertexNormals();
     return geometry;
-    
   }, [safeScreenWorldWidth, safeScreenWorldHeight, cutoutRadius, bevelSize]);
 
-  // Compute world-space UVs for the frame mesh after mount/update
-  useLayoutEffect(() => {
-    const mesh = frameMeshRef.current;
-    if (!mesh) return;
-    // Ensure world transform is up-to-date
-    mesh.updateMatrixWorld(true);
-    const geom = mesh.geometry as THREE.BufferGeometry;
-    const posAttr = geom.attributes.position as THREE.BufferAttribute;
-    if (!posAttr) return;
-    const uvArray = new Float32Array(posAttr.count * 2);
-    // Reusable vectors for CPU-side world transform
-    const localPos = new THREE.Vector3();
-    const worldPos = new THREE.Vector3();
-    for (let i = 0; i < posAttr.count; i++) {
-      // Read local vertex position
-      localPos.set(
-        posAttr.getX(i),
-        posAttr.getY(i),
-        posAttr.getZ(i)
-      );
-      // Transform to world space
-      worldPos.copy(localPos).applyMatrix4(mesh.matrixWorld);
-      // Use world X/Y for absolute UVs
-      uvArray[2 * i]     = worldPos.x * frameNoiseScale;
-      uvArray[2 * i + 1] = worldPos.y * frameNoiseScale;
-    }
-    geom.setAttribute('uv', new THREE.BufferAttribute(uvArray, 2));
-    geom.attributes.uv.needsUpdate = true;
-    // Ensure bumpMap repeats and uses the UVs
-    const mat = mesh.material as THREE.MeshPhysicalMaterial;
-    if (mat && mat.bumpMap) {
-      mat.bumpMap.wrapS = mat.bumpMap.wrapT = THREE.RepeatWrapping;
-    }
-  // Re-run whenever scale or the underlying CSG geometry changes
+  // Removed surround-sphere cutout geometry
+
+  // Set the dirty flag when dependencies change
+  useEffect(() => {
+    uvNeedsUpdate.current = true;
   }, [frameNoiseScale, safeScreenWorldWidth, safeScreenWorldHeight, screenCutoutShape]);
 
   return (
@@ -367,7 +386,7 @@ export default function Monitor3D({
       />
       {/* Power LED */}
       <group position={[ledX, ledY, ledZ]}>
-        <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <mesh castShadow receiveShadow>
           <sphereGeometry args={[ledRadiusWorld, 36, 36]} />
           <meshPhysicalMaterial
             color="#fff0c7"
@@ -384,10 +403,10 @@ export default function Monitor3D({
           intensity={0.01}
           distance={0}
           decay={2}
-          castShadow={true}
+          castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
-          position={[0, 0, .1]}
+          position={[0, 0, 0.1]}
         />
       </group>
     </group>
