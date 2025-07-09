@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useWindowSize } from '../utils/useWindowSize';
 import { TerminalEntry, TextEntry } from '../lib/terminal-types';
 
@@ -28,6 +28,62 @@ export default function TerminalController({
 
   // Track window size using centralized hook
   const windowSize = useWindowSize();
+
+  // Calculate the exact prompt width for consistent indentation
+  const promptIndent = useMemo(() => {
+    // Create a temporary canvas to measure prompt width
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '1.5rem'; // Fallback
+    
+    // Set font to match terminal styling
+    ctx.font = '16px monospace';
+    const promptWidth = ctx.measureText('> ').width;
+    
+    return `${promptWidth}px`;
+  }, []);
+
+  // Helper function to calculate wrapped lines for input
+  const calculateWrappedInputLines = useCallback((text: string): string[] => {
+    if (!text) return [''];
+    
+    // Create a temporary canvas to measure text width
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return [text]; // Fallback if canvas context not available
+    
+    // Set font to match terminal styling
+    ctx.font = '16px monospace'; // Match the terminal font
+    
+    // Calculate available width (account for terminal padding and prompt)
+    const promptWidth = ctx.measureText('> ').width;
+    const padding = 32; // p-4 = 16px on each side
+    const availableWidth = windowSize.width - padding - promptWidth - 50; // Extra margin for safety
+    
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    words.forEach((word) => {
+      const testLine = currentLine + (currentLine ? ' ' : '') + word;
+      const metrics = ctx.measureText(testLine);
+      
+      if (metrics.width > availableWidth && currentLine) {
+        // Current line is full, start a new one
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    });
+    
+    // Add the remaining text
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    return lines.length > 0 ? lines : [''];
+  }, [windowSize.width]);
 
   const handleTyping = useCallback(() => {
     setIsTyping(true);
@@ -83,7 +139,7 @@ export default function TerminalController({
           {/* Terminal output area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-1 flex flex-col-reverse">
             {entries.slice().reverse().map((entry) => (
-              <div key={entry.id} className="whitespace-pre-wrap ml-4">
+              <div key={entry.id} className="whitespace-pre-wrap" style={{ marginLeft: promptIndent }}>
                 {entry.render()}
               </div>
             ))}
@@ -91,10 +147,25 @@ export default function TerminalController({
           
           {/* Input line */}
           <div className="p-4 border-t border-gray-800">
-            <div className="flex items-center">
-              <span className="text-white mr-2">&gt;</span>
-              <span className="whitespace-pre">{currentInput}</span>
-              <span className={`bg-white w-2 h-5 inline-block ${isTyping ? '' : 'cursor-blink'}`}></span>
+            <div className="flex flex-col">
+              {(() => {
+                const wrappedLines = calculateWrappedInputLines(currentInput);
+                // Reverse lines so they display from top to bottom but read correctly (wrap upward)
+                return wrappedLines.slice().reverse().map((line, index) => {
+                  const isBottomLine = index === wrappedLines.length - 1;
+                  return (
+                    <div key={index} className="flex items-center">
+                      {isBottomLine && <span className="text-white mr-2">&gt;</span>}
+                      {!isBottomLine && <span className="text-transparent mr-2 select-none">&gt;</span>} {/* Invisible prompt for alignment */}
+                      <span className="whitespace-pre">{line}</span>
+                      {/* Show cursor only on the bottom line */}
+                      {isBottomLine && (
+                        <span className={`bg-white w-2 h-5 inline-block ${isTyping ? '' : 'cursor-blink'}`}></span>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
