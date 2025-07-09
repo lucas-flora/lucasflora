@@ -62,6 +62,7 @@ interface Monitor3DProps {
   keyLightXRel: number;
   keyLightYRel: number;
   keyLightZRel: number;
+  keyLightDistanceRel: number;
   // LED indicator radius in px (will be converted to world units)
   ledRadiusPx?: number;
   ledInset?: number;
@@ -120,6 +121,7 @@ export default function Monitor3D({
   keyLightXRel = -0.33,
   keyLightYRel = 0.412,
   keyLightZRel = 1.923,
+  keyLightDistanceRel = 1.0,
   ledRadiusPx = 6,
   ledInset = 0.02,
 }: Monitor3DProps) {
@@ -273,6 +275,10 @@ export default function Monitor3D({
     minGeometrySize,
     worldLineSpacing,
   } = geometryData;
+
+  // Calculate light distance based on frame diagonal and relative multiplier
+  const frameDiagonal = Math.sqrt(fullFrameWidth * fullFrameWidth + fullFrameHeight * fullFrameHeight);
+  const keyLightDistance = frameDiagonal * keyLightDistanceRel;
   // Frame material with a true noise bump map (sampled via world-space UVs)
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture(512);
@@ -453,7 +459,7 @@ export default function Monitor3D({
         ]}
         color="#ffffff"
         intensity={keyLightIntensity}
-        distance={10}
+        distance={keyLightDistance}
         decay={1}
         castShadow
         shadow-mapSize-width={1024}

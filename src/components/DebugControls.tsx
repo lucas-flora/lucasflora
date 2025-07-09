@@ -54,10 +54,12 @@ interface DebugControlsProps {
   keyLightXRel: number;
   keyLightYRel: number;
   keyLightZRel: number;
+  keyLightDistanceRel: number;
   onKeyLightIntensityChange: (value: number) => void;
   onKeyLightXRelChange: (value: number) => void;
   onKeyLightYRelChange: (value: number) => void;
   onKeyLightZRelChange: (value: number) => void;
+  onKeyLightDistanceRelChange: (value: number) => void;
   // LED & surround sphere controls
   ledRadiusPx: number;
   surroundRadius: number;
@@ -117,10 +119,12 @@ export default function DebugControls({
   keyLightYRel,
   keyLightZRel,
   keyLightIntensity,
+  keyLightDistanceRel,
   onKeyLightIntensityChange,
   onKeyLightXRelChange,
   onKeyLightYRelChange,
   onKeyLightZRelChange,
+  onKeyLightDistanceRelChange,
   // LED & surround sphere
   ledRadiusPx,
   // surroundRadius,
@@ -469,6 +473,21 @@ export default function DebugControls({
             step={0.01}
             value={keyLightZRel}
             onChange={(e) => onKeyLightZRelChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Key Light Distance Rel: {keyLightDistanceRel.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min={0.1}
+            max={5}
+            step={0.1}
+            value={keyLightDistanceRel}
+            onChange={(e) => onKeyLightDistanceRelChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

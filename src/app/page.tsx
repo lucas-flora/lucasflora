@@ -76,6 +76,7 @@ function MainScene({
   keyLightYRel,
   keyLightZRel,
   keyLightIntensity,
+  keyLightDistanceRel,
   ledRadiusPx,
   ledInset,
   checkerboardSize,
@@ -110,6 +111,7 @@ function MainScene({
   keyLightYRel: number;
   keyLightZRel: number;
   keyLightIntensity: number;
+  keyLightDistanceRel: number;
   ledRadiusPx: number;
   ledInset: number;
   checkerboardSize: number;
@@ -146,6 +148,7 @@ function MainScene({
         keyLightYRel={keyLightYRel}
         keyLightZRel={keyLightZRel}
         keyLightIntensity={keyLightIntensity}
+        keyLightDistanceRel={keyLightDistanceRel}
         ledRadiusPx={ledRadiusPx}
         ledInset={ledInset}
         checkerboardSize={checkerboardSize}
@@ -232,6 +235,7 @@ export default function Home() {
   const [keyLightXRel, setKeyLightXRel] = useState(-0.880);
   const [keyLightYRel, setKeyLightYRel] = useState(0.540);
   const [keyLightZRel, setKeyLightZRel] = useState(0.560);
+  const [keyLightDistanceRel, setKeyLightDistanceRel] = useState(1.0);
 
   // LED & surround sphere radii
   const [ledRadiusPx, setLedRadiusPx] = useState(6);
@@ -334,6 +338,7 @@ export default function Home() {
           keyLightXRel={keyLightXRel}
           keyLightYRel={keyLightYRel}
           keyLightZRel={keyLightZRel}
+          keyLightDistanceRel={keyLightDistanceRel}
           ledRadiusPx={ledRadiusPx}
           // surroundRadius={surroundRadius}
           ledInset={ledInset}
@@ -389,10 +394,12 @@ export default function Home() {
           keyLightYRel={keyLightYRel}
           keyLightZRel={keyLightZRel}
           keyLightIntensity={keyLightIntensity}
+          keyLightDistanceRel={keyLightDistanceRel}
           onKeyLightIntensityChange={setKeyLightIntensity}
           onKeyLightXRelChange={setKeyLightXRel}
           onKeyLightYRelChange={setKeyLightYRel}
           onKeyLightZRelChange={setKeyLightZRel}
+          onKeyLightDistanceRelChange={setKeyLightDistanceRel}
           // led and surround
           ledRadiusPx={ledRadiusPx}
           surroundRadius={surroundRadius}
