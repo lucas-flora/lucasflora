@@ -48,6 +48,7 @@ interface Monitor3DProps {
   edgeTransition?: number;
   displacementAmount?: number;
   emissiveBoost?: number;
+  checkerboardSize?: number;
   terminalEntries?: TerminalEntry[];
   currentInput?: string;
   isTyping?: boolean;
@@ -100,12 +101,13 @@ export default function Monitor3D({
   marginBottomPx,
   marginLeftPx,
   scanlineStrength = 0.4,
-  lineSpacing = 800.0,
+  lineSpacing = 25,
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
   displacementAmount = 0.07,
   emissiveBoost = 1.2,
+  checkerboardSize = 0.05,
   terminalEntries = [],
   currentInput = '',
   isTyping = false,
@@ -216,6 +218,9 @@ export default function Monitor3D({
     const fullFrameWidth = safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight;
     const fullFrameHeight = safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom;
 
+    // Convert pixel-based line spacing to true world units
+    const worldLineSpacing = lineSpacing * safeWorldPx;
+
     return {
       safeWorldPx,
       safeScreenPxWidth,
@@ -240,8 +245,9 @@ export default function Monitor3D({
       fullFrameWidth,
       fullFrameHeight,
       minGeometrySize,
+      worldLineSpacing,
     };
-  }, [windowSize.width, windowSize.height, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx, ledRadiusPx, ledInset, camera]);
+  }, [windowSize.width, windowSize.height, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx, ledRadiusPx, ledInset, camera, lineSpacing]);
 
   // Destructure all the geometry data for cleaner access
   const {
@@ -265,6 +271,7 @@ export default function Monitor3D({
     fullFrameWidth,
     fullFrameHeight,
     minGeometrySize,
+    worldLineSpacing,
   } = geometryData;
   // Frame material with a true noise bump map (sampled via world-space UVs)
   const frameMaterial = useMemo(() => {
@@ -425,13 +432,14 @@ export default function Monitor3D({
           yOffset={0}
           debugMode={debugMode}
           scanlineStrength={scanlineStrength}
-          lineSpacing={lineSpacing}
+          lineSpacing={worldLineSpacing}
           cornerRoundness={cornerRoundness}
           bubbleSize={bubbleSize}
           edgeTransition={edgeTransition}
           displacementAmount={displacementAmount}
           emissiveBoost={emissiveBoost}
           terminalTexture={terminalTexture}
+          checkerboardSize={checkerboardSize}
         />
       </group>
       {/* Lighting */}

@@ -16,6 +16,7 @@ interface ScreenMeshProps {
   edgeTransition?: number;
   displacementAmount?: number;
   emissiveBoost?: number;
+  checkerboardSize?: number;
   terminalTexture?: THREE.Texture | null;
 }
 
@@ -25,12 +26,13 @@ export default function ScreenMesh({
   yOffset, 
   debugMode = 0,
   scanlineStrength = 0.4,
-  lineSpacing = 20.0, // Now in world units
+  lineSpacing = 25, // Pixel-units that get converted to world units
   cornerRoundness = 0.4,
   bubbleSize = 0.99,
   edgeTransition = 0.15,
   displacementAmount = 0.07,
   emissiveBoost = 1.2,
+  checkerboardSize = 0.1,
   terminalTexture
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -62,6 +64,7 @@ export default function ScreenMesh({
         terminalTexture={terminalTexture || undefined}
         screenWidth={width}
         screenHeight={height}
+        checkerboardSize={checkerboardSize}
       />
     </mesh>
   );

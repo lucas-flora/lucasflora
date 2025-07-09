@@ -25,6 +25,8 @@ interface DebugControlsProps {
   bevelSize: number;
   onCutoutRadiusChange: (value: number) => void;
   onBevelSizeChange: (value: number) => void;
+  checkerboardSize: number;
+  onCheckerboardSizeChange: (value: number) => void;
   // Debug mode
   debugMode: number;
   onDebugModeChange: (value: number) => void;
@@ -88,6 +90,8 @@ export default function DebugControls({
   bevelSize,
   onCutoutRadiusChange,
   onBevelSizeChange,
+  checkerboardSize,
+  onCheckerboardSizeChange,
   debugMode,
   onDebugModeChange,
   bloomIntensity,
@@ -243,15 +247,30 @@ export default function DebugControls({
         
         <div>
           <label className="block text-xs text-gray-300 mb-1">
-            Line Spacing: {lineSpacing.toFixed(3)} world units
+            Line Spacing: {lineSpacing.toFixed(1)} px-units
           </label>
           <input
             type="range"
-            min={0.005}
-            max={0.1}
-            step={0.005}
+            min={0.1}
+            max={20}
+            step={0.1}
             value={lineSpacing}
             onChange={(e) => onLineSpacingChange(parseFloat(e.target.value))}
+            className="w-full"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-xs text-gray-300 mb-1">
+            Checkerboard Size: {checkerboardSize.toFixed(3)} world units
+          </label>
+          <input
+            type="range"
+            min={0.01}
+            max={0.2}
+            step={0.005}
+            value={checkerboardSize}
+            onChange={(e) => onCheckerboardSizeChange(parseFloat(e.target.value))}
             className="w-full"
           />
         </div>

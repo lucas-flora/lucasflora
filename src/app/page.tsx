@@ -78,6 +78,7 @@ function MainScene({
   keyLightIntensity,
   ledRadiusPx,
   ledInset,
+  checkerboardSize,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -111,6 +112,7 @@ function MainScene({
   keyLightIntensity: number;
   ledRadiusPx: number;
   ledInset: number;
+  checkerboardSize: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -146,6 +148,7 @@ function MainScene({
         keyLightIntensity={keyLightIntensity}
         ledRadiusPx={ledRadiusPx}
         ledInset={ledInset}
+        checkerboardSize={checkerboardSize}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -210,7 +213,8 @@ export default function Home() {
   const [edgeTransition, setEdgeTransition] = useState(0.73);
   const [displacementAmount, setDisplacementAmount] = useState(0.30);
   const [scanlineStrength, setScanlineStrength] = useState(0.1);
-  const [lineSpacing, setLineSpacing] = useState(0.015); // World units between scanlines
+  const [lineSpacing, setLineSpacing] = useState(3.0); // Pixel-units that get converted to world units
+  const [checkerboardSize, setCheckerboardSize] = useState(0.12); // World units per checkerboard square
   const [emissiveBoost, setEmissiveBoost] = useState(1.1);
 
   // Bloom parameters - Better defaults for the new setup
@@ -333,6 +337,7 @@ export default function Home() {
           ledRadiusPx={ledRadiusPx}
           // surroundRadius={surroundRadius}
           ledInset={ledInset}
+          checkerboardSize={checkerboardSize}
         />
       </Canvas>
 
@@ -395,6 +400,8 @@ export default function Home() {
           onSurroundRadiusChange={setSurroundRadius}
           ledInset={ledInset}
           onLedInsetChange={setLedInset}
+          checkerboardSize={checkerboardSize}
+          onCheckerboardSizeChange={setCheckerboardSize}
         />
       )}
 
