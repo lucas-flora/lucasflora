@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
+import { useWindowSize } from '../utils/useWindowSize';
 import ScreenMesh from './ScreenMesh';
 // import MonitorShaderMaterial from './MonitorShaderMaterial';
 import * as THREE from 'three';
@@ -126,14 +127,8 @@ export default function Monitor3D({
   // Dirty flag for UV update
   const uvNeedsUpdate = useRef(true);
 
-  // Track window size for world-unit calculation
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
-    const onResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+  // Track window size for world-unit calculation using centralized hook
+  const windowSize = useWindowSize();
 
   // Compute world-units-per-CSS-pixel at the front face depth
   const { camera: genericCamera } = useThree();

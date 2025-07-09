@@ -6,6 +6,7 @@ import { useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
 import dynamic from 'next/dynamic';
 import { useWebGPU } from '../utils/useWebGPU';
+import { useWindowSize } from '../utils/useWindowSize';
 import TerminalController from '../components/TerminalController';
 import FallbackPage from '../components/FallbackPage';
 import { TerminalEntry } from '../lib/terminal-types';
@@ -172,16 +173,8 @@ export default function Home() {
   // Debug menu visibility state
   const [showDebugControls, setShowDebugControls] = useState(false);
 
-  // Window size state and resize handler
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // Window size using centralized hook
+  const windowSize = useWindowSize();
 
   // Keyboard shortcut for debug controls (Ctrl+Shift+D)
   useEffect(() => {

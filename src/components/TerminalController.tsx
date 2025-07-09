@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useWindowSize } from '../utils/useWindowSize';
 import { TerminalEntry, TextEntry } from '../lib/terminal-types';
 
 interface TerminalControllerProps {
@@ -22,21 +23,11 @@ export default function TerminalController({
   const [currentInput, setCurrentInput] = useState('');
   const [, setIsInputFocused] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
-  const [windowHeight, setWindowHeight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Track window height for positioning
-  useEffect(() => {
-    const updateWindowHeight = () => {
-      setWindowHeight(window.innerHeight);
-    };
-    
-    updateWindowHeight();
-    window.addEventListener('resize', updateWindowHeight);
-    
-    return () => window.removeEventListener('resize', updateWindowHeight);
-  }, []);
+  // Track window size using centralized hook
+  const windowSize = useWindowSize();
 
   const handleTyping = useCallback(() => {
     setIsTyping(true);
@@ -115,7 +106,7 @@ export default function TerminalController({
         className="absolute opacity-0 pointer-events-auto"
         style={{ 
           left: '-9999px', 
-          top: hideVisualContent ? `${windowHeight - yOffset}px` : '-9999px',
+          top: hideVisualContent ? `${windowSize.height - yOffset}px` : '-9999px',
           width: '1px', 
           height: '1px' 
         }}
