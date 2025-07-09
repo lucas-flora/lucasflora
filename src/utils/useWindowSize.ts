@@ -22,21 +22,28 @@ export function useWindowSize(): WindowSize {
     const handleResize = () => {
       // Only update if we're in a browser environment
       if (typeof window !== 'undefined') {
-        setWindowSize({
+        const newSize = {
           width: window.innerWidth,
           height: window.innerHeight,
-        });
+        };
+        console.log('🪟 useWindowSize: Window resize detected', newSize);
+        setWindowSize(newSize);
       }
     };
 
     // Set size immediately on mount
+    console.log('🪟 useWindowSize: Initial setup');
     handleResize();
 
     // Add event listener
     window.addEventListener('resize', handleResize);
+    console.log('🪟 useWindowSize: Event listener added');
 
     // Cleanup function to remove event listener
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      console.log('🪟 useWindowSize: Event listener removed');
+    };
   }, []); // Empty dependency array ensures this only runs once
 
   return windowSize;

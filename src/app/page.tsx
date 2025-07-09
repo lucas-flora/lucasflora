@@ -283,6 +283,21 @@ export default function Home() {
         }}
         shadows
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        onCreated={(state) => {
+          // Add ResizeObserver to track Canvas size changes
+          const canvas = state.gl.domElement;
+          const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+              const { width, height } = entry.contentRect;
+              console.log('🖼️ Canvas ResizeObserver: Canvas size changed', { width, height });
+            }
+          });
+          observer.observe(canvas);
+          
+          // Store observer on state for cleanup
+          // @ts-expect-error - temporary debugging observer
+          state.resizeObserver = observer;
+        }}
       >
         <MainScene
           screenZ={screenZ}
@@ -403,8 +418,16 @@ export default function Home() {
 
 
 function AutoFitCamera({ screenWidth, screenHeight }: { screenWidth: number; screenHeight: number }) {
-  const { camera: genericCamera, size } = useThree();
+  const { camera: genericCamera } = useThree();
+  const windowSize = useWindowSize();
+  
   useEffect(() => {
+    console.log('📷 AutoFitCamera: useEffect triggered', { 
+      screenWidth, 
+      screenHeight, 
+      windowWidth: windowSize.width, 
+      windowHeight: windowSize.height 
+    });
     const camera = genericCamera as PerspectiveCamera;
     if (!(camera instanceof PerspectiveCamera)) return;
     
@@ -450,6 +473,6 @@ function AutoFitCamera({ screenWidth, screenHeight }: { screenWidth: number; scr
     }
     
     camera.updateProjectionMatrix();
-  }, [genericCamera, size.width, size.height, screenWidth, screenHeight]);
+  }, [genericCamera, windowSize.width, windowSize.height, screenWidth, screenHeight]);
   return null;
 }

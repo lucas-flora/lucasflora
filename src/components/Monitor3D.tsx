@@ -130,66 +130,143 @@ export default function Monitor3D({
   // Track window size for world-unit calculation using centralized hook
   const windowSize = useWindowSize();
 
-  // Compute world-units-per-CSS-pixel at the front face depth
+  // Get camera reference outside of useMemo to avoid React Hook rules violation
   const { camera: genericCamera } = useThree();
   const camera = genericCamera as PerspectiveCamera;
-  const fovRad = (camera.fov * Math.PI) / 180;
-  // distance from camera to enclosure front face at Z=0
-  const dist = camera.position.z;
-  // world units per CSS pixel so geometry will fill view
-  // Add safety check to prevent division by zero and ensure reasonable values
-  const safeWindowHeight = Math.max(windowSize.height, 1); // Minimum 1px to prevent division by zero
-  const worldPx = (2 * dist * Math.tan(fovRad / 2)) / safeWindowHeight;
-  
-  // Validate worldPx to ensure it's a reasonable finite number
-  const safeWorldPx = (isFinite(worldPx) && worldPx > 0) ? worldPx : 0.001; // Fallback to small positive value
 
-  // Calculate screen dimensions with validation
-  const rawScreenWidth = windowSize.width - marginLeftPx - marginRightPx;
-  const rawScreenHeight = windowSize.height - marginTopPx - marginBottomPx;
-  
-  // Ensure screen dimensions are positive (minimum 1px each)
-  const safeScreenPxWidth = Math.max(rawScreenWidth, 1);
-  const safeScreenPxHeight = Math.max(rawScreenHeight, 1);
-  
-  const screenWorldWidth = safeScreenPxWidth * safeWorldPx;
-  const screenWorldHeight = safeScreenPxHeight * safeWorldPx;
-  
-  // Calculate frame dimensions with minimum thresholds
-  const minFramePx = 8; // Minimum 8 pixels for any frame dimension
-  const safeMarginLeft = Math.max(marginLeftPx, minFramePx);
-  const safeMarginRight = Math.max(marginRightPx, minFramePx);
-  const safeMarginTop = Math.max(marginTopPx, minFramePx);
-  const safeMarginBottom = Math.max(marginBottomPx, minFramePx);
-  
-  const frameLeft = safeMarginLeft * safeWorldPx;
-  const frameRight = safeMarginRight * safeWorldPx;
-  const frameTop = safeMarginTop * safeWorldPx;
-  const frameBottom = safeMarginBottom * safeWorldPx;
+  // Memoize all geometry calculations so they only update when window size or margins change
+  const geometryData = useMemo(() => {
+    console.log('🔄 Monitor3D: Recalculating geometry (expensive operation)');
+    // Compute world-units-per-CSS-pixel at the front face depth
+    const fovRad = (camera.fov * Math.PI) / 180;
+    // distance from camera to enclosure front face at Z=0
+    const dist = camera.position.z;
+    // world units per CSS pixel so geometry will fill view
+    // Add safety check to prevent division by zero and ensure reasonable values
+    const safeWindowHeight = Math.max(windowSize.height, 1); // Minimum 1px to prevent division by zero
+    const worldPx = (2 * dist * Math.tan(fovRad / 2)) / safeWindowHeight;
+    
+    // Validate worldPx to ensure it's a reasonable finite number
+    const safeWorldPx = (isFinite(worldPx) && worldPx > 0) ? worldPx : 0.001; // Fallback to small positive value
 
-  // Center offsets so inner edges align with margins
-  const xOffset = (frameRight - frameLeft) / 2;
-  const yOffset = (frameBottom - frameTop) / 2;
+    // Calculate screen dimensions with validation
+    const rawScreenWidth = windowSize.width - marginLeftPx - marginRightPx;
+    const rawScreenHeight = windowSize.height - marginTopPx - marginBottomPx;
+    
+    // Ensure screen dimensions are positive (minimum 1px each)
+    const safeScreenPxWidth = Math.max(rawScreenWidth, 1);
+    const safeScreenPxHeight = Math.max(rawScreenHeight, 1);
+    
+    const screenWorldWidth = safeScreenPxWidth * safeWorldPx;
+    const screenWorldHeight = safeScreenPxHeight * safeWorldPx;
+    
+    // Calculate frame dimensions with minimum thresholds
+    const minFramePx = 8; // Minimum 8 pixels for any frame dimension
+    const safeMarginLeft = Math.max(marginLeftPx, minFramePx);
+    const safeMarginRight = Math.max(marginRightPx, minFramePx);
+    const safeMarginTop = Math.max(marginTopPx, minFramePx);
+    const safeMarginBottom = Math.max(marginBottomPx, minFramePx);
+    
+    const frameLeft = safeMarginLeft * safeWorldPx;
+    const frameRight = safeMarginRight * safeWorldPx;
+    const frameTop = safeMarginTop * safeWorldPx;
+    const frameBottom = safeMarginBottom * safeWorldPx;
 
-  // Mesh dimensions: add slight padding if desired
-  const screenMeshWidth = screenWorldWidth + 0.01;
-  const screenMeshHeight = screenWorldHeight + 0.01;
+    // Center offsets so inner edges align with margins
+    const xOffset = (frameRight - frameLeft) / 2;
+    const yOffset = (frameBottom - frameTop) / 2;
 
-  // Base housing depth (we doubled it in the boxGeometry args)
-  const baseDepth = HOUSING_DEPTH * 2;
+    // Mesh dimensions: add slight padding if desired
+    const screenMeshWidth = screenWorldWidth + 0.01;
+    const screenMeshHeight = screenWorldHeight + 0.01;
 
+    // Base housing depth (we doubled it in the boxGeometry args)
+    const baseDepth = HOUSING_DEPTH * 2;
 
-  // Power LED: 8px radius LED at 48px from edges, at housing front depth
-  // variables for power LED position with safe calculations
-  const ledXoffset = 8;
-  const ledYoffset = -18;
-  // Use slider for radius
-  const ledRadiusWorld = Math.max(ledRadiusPx * safeWorldPx, 0.001); // Ensure minimum LED size
-  const ledX = screenWorldWidth / 2 - ledXoffset * safeWorldPx;
-  const ledY = -screenWorldHeight / 2 + ledYoffset * safeWorldPx;
-  // Determine how far back from the front face the LED sits:
-  // const ledInset = 0.02; // or expose as a prop/slider
-  const ledZ = baseDepth / 2 - ledInset;
+    // Power LED: 8px radius LED at 48px from edges, at housing front depth
+    // variables for power LED position with safe calculations
+    const ledXoffset = 8;
+    const ledYoffset = -18;
+    // Use slider for radius
+    const ledRadiusWorld = Math.max(ledRadiusPx * safeWorldPx, 0.001); // Ensure minimum LED size
+    const ledX = screenWorldWidth / 2 - ledXoffset * safeWorldPx;
+    const ledY = -screenWorldHeight / 2 + ledYoffset * safeWorldPx;
+    // Determine how far back from the front face the LED sits:
+    const ledZ = baseDepth / 2 - ledInset;
+
+    // Make frame pieces much thicker to ensure no gaps at screen edges
+    const thicknessFactor = 5; // Make frame pieces 5x thicker than the margins
+    const thickFrameTop = frameTop * thicknessFactor;
+    const thickFrameBottom = frameBottom * thicknessFactor;
+    const thickFrameLeft = frameLeft * thicknessFactor;
+    const thickFrameRight = frameRight * thicknessFactor;
+
+    // Ensure all geometry dimensions are valid and above minimum thresholds
+    // RoundedBoxGeometry requires dimensions > 0 and radius < smallest dimension / 2
+    const minGeometrySize = 0.001; // Minimum geometry dimension in world units
+
+    // Validate all frame dimensions
+    const safeThickFrameTop = Math.max(thickFrameTop, minGeometrySize);
+    const safeThickFrameBottom = Math.max(thickFrameBottom, minGeometrySize);
+    const safeThickFrameLeft = Math.max(thickFrameLeft, minGeometrySize);
+    const safeThickFrameRight = Math.max(thickFrameRight, minGeometrySize);
+    const safeScreenWorldWidth = Math.max(screenWorldWidth, minGeometrySize);
+    const safeScreenWorldHeight = Math.max(screenWorldHeight, minGeometrySize);
+    
+    // Compute full housing dims for light positioning
+    const fullFrameWidth = safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight;
+    const fullFrameHeight = safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom;
+
+    return {
+      safeWorldPx,
+      safeScreenPxWidth,
+      safeScreenPxHeight,
+      screenWorldWidth,
+      screenWorldHeight,
+      xOffset,
+      yOffset,
+      screenMeshWidth,
+      screenMeshHeight,
+      baseDepth,
+      ledRadiusWorld,
+      ledX,
+      ledY,
+      ledZ,
+      safeThickFrameTop,
+      safeThickFrameBottom,
+      safeThickFrameLeft,
+      safeThickFrameRight,
+      safeScreenWorldWidth,
+      safeScreenWorldHeight,
+      fullFrameWidth,
+      fullFrameHeight,
+      minGeometrySize,
+    };
+  }, [windowSize.width, windowSize.height, marginTopPx, marginRightPx, marginBottomPx, marginLeftPx, ledRadiusPx, ledInset, camera]);
+
+  // Destructure all the geometry data for cleaner access
+  const {
+    safeScreenPxWidth,
+    safeScreenPxHeight,
+    xOffset,
+    yOffset,
+    screenMeshWidth,
+    screenMeshHeight,
+    baseDepth,
+    ledRadiusWorld,
+    ledX,
+    ledY,
+    ledZ,
+    safeThickFrameTop,
+    safeThickFrameBottom,
+    safeThickFrameLeft,
+    safeThickFrameRight,
+    safeScreenWorldWidth,
+    safeScreenWorldHeight,
+    fullFrameWidth,
+    fullFrameHeight,
+    minGeometrySize,
+  } = geometryData;
   // Frame material with a true noise bump map (sampled via world-space UVs)
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture(512);
@@ -259,34 +336,14 @@ export default function Monitor3D({
     isTyping
   });
 
-  // Make frame pieces much thicker to ensure no gaps at screen edges
-  const thicknessFactor = 5; // Make frame pieces 5x thicker than the margins
-  const thickFrameTop = frameTop * thicknessFactor;
-  const thickFrameBottom = frameBottom * thicknessFactor;
-  const thickFrameLeft = frameLeft * thicknessFactor;
-  const thickFrameRight = frameRight * thicknessFactor;
-
-  // Ensure all geometry dimensions are valid and above minimum thresholds
-  // RoundedBoxGeometry requires dimensions > 0 and radius < smallest dimension / 2
-  const minGeometrySize = 0.001; // Minimum geometry dimension in world units
-  // const safeRadius = Math.min(filletRadius, 
-  //   Math.min(thickFrameTop, thickFrameBottom, thickFrameLeft, thickFrameRight, HOUSING_DEPTH) / 3
-  // );
-
-  // Validate all frame dimensions
-  const safeThickFrameTop = Math.max(thickFrameTop, minGeometrySize);
-  const safeThickFrameBottom = Math.max(thickFrameBottom, minGeometrySize);
-  const safeThickFrameLeft = Math.max(thickFrameLeft, minGeometrySize);
-  const safeThickFrameRight = Math.max(thickFrameRight, minGeometrySize);
-  const safeScreenWorldWidth = Math.max(screenWorldWidth, minGeometrySize);
-  const safeScreenWorldHeight = Math.max(screenWorldHeight, minGeometrySize);
-  // Compute full housing dims for light positioning
-  const fullFrameWidth = safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight;
-  const fullFrameHeight = safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom;
-
+  // Debug: Track when terminal content changes (this should happen on typing)
+  useEffect(() => {
+    console.log('✅ Monitor3D: Terminal content updated (cheap operation)', { currentInput, isTyping });
+  }, [currentInput, isTyping]);
 
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
+    console.log('🔧 Monitor3D: Creating screen cutout shape (should only happen on size changes)');
     const shape = new THREE.Shape();
     const w = safeScreenWorldWidth;
     const h = safeScreenWorldHeight;
@@ -315,34 +372,43 @@ export default function Monitor3D({
     return geometry;
   }, [safeScreenWorldWidth, safeScreenWorldHeight, cutoutRadius, bevelSize]);
 
+  // Memoize the entire CSG geometry JSX to prevent rebuilding on non-geometry changes
+  const csgGeometry = useMemo(() => {
+    console.log('🏗️ Monitor3D: Creating CSG geometry JSX (should only happen on size changes)');
+    return (
+      <Geometry>
+        <Base>
+          <boxGeometry
+            args={[
+              safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
+              safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
+              HOUSING_DEPTH * 2,    // Made base twice as deep
+              8,
+              8,
+              8
+            ]}
+          />
+        </Base>
+        <Subtraction>
+          <primitive object={screenCutoutShape} />
+        </Subtraction>
+      </Geometry>
+    );
+  }, [screenCutoutShape, safeScreenWorldWidth, safeScreenWorldHeight, safeThickFrameLeft, safeThickFrameRight, safeThickFrameTop, safeThickFrameBottom]);
+
   // Removed surround-sphere cutout geometry
 
-  // Set the dirty flag when dependencies change
+  // Set the dirty flag when dependencies change - only size-related changes trigger UV updates
   useEffect(() => {
+    console.log('🔄 Monitor3D: UV update triggered (expensive operation)');
     uvNeedsUpdate.current = true;
   }, [frameNoiseScale, safeScreenWorldWidth, safeScreenWorldHeight, screenCutoutShape]);
 
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, -baseDepth / 2]}>
-      {/* Frame using CSG subtraction */}
+      {/* Frame using memoized CSG geometry */}
       <mesh ref={frameMeshRef} castShadow receiveShadow>
-        <Geometry>
-          <Base>
-            <boxGeometry
-              args={[
-                safeScreenWorldWidth + safeThickFrameLeft + safeThickFrameRight,
-                safeScreenWorldHeight + safeThickFrameTop + safeThickFrameBottom,
-                HOUSING_DEPTH * 2,    // Made base twice as deep
-                8,
-                8,
-                8
-              ]}
-            />
-          </Base>
-          <Subtraction>
-            <primitive object={screenCutoutShape} />
-          </Subtraction>
-        </Geometry>
+        {csgGeometry}
         <primitive object={frameMaterial} attach="material" />
       </mesh>
       {/* Screen area - RECESSED into housing */}
