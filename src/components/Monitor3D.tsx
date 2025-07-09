@@ -277,8 +277,10 @@ export default function Monitor3D({
   } = geometryData;
 
   // Calculate light distance based on frame diagonal and relative multiplier
+  // Use hybrid scaling: base distance + proportional scaling
+  // This prevents light falloff on large frames while maintaining good lighting on small frames
   const frameDiagonal = Math.sqrt(fullFrameWidth * fullFrameWidth + fullFrameHeight * fullFrameHeight);
-  const keyLightDistance = frameDiagonal * keyLightDistanceRel;
+  const keyLightDistance = (5.0 + frameDiagonal * 0.8) * keyLightDistanceRel;
   // Frame material with a true noise bump map (sampled via world-space UVs)
   const frameMaterial = useMemo(() => {
     const bumpMap = generateNoiseTexture(512);
