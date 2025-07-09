@@ -212,8 +212,8 @@ export default function Home() {
 
   // Map parameters
   const [cornerRoundness, setCornerRoundness] = useState(0.5);
-  const [bubbleSize, setBubbleSize] = useState(0.84);
-  const [edgeTransition, setEdgeTransition] = useState(0.73);
+  const [bubbleSize, setBubbleSize] = useState(0.97);
+  const [edgeTransition, setEdgeTransition] = useState(0.62);
   const [displacementAmount, setDisplacementAmount] = useState(0.30);
   const [scanlineStrength, setScanlineStrength] = useState(0.1);
   const [lineSpacing, setLineSpacing] = useState(3.0); // Pixel-units that get converted to world units
