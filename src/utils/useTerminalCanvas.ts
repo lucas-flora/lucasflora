@@ -1,10 +1,15 @@
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { TerminalEntry } from '../lib/terminal-types';
+import { useWindowSize } from './useWindowSize';
 
 interface TerminalCanvasOptions {
-  width?: number;
-  height?: number;
+  // Layout margins (for calculating canvas size from window size)
+  marginTopPx?: number;
+  marginRightPx?: number;
+  marginBottomPx?: number;
+  marginLeftPx?: number;
+  // Styling options
   backgroundColor?: string;
   textColor?: string;
   fontSize?: number;
@@ -14,6 +19,7 @@ interface TerminalCanvasOptions {
   spaceBetweenEntries?: number;
   showCursor?: boolean;
   cursorColor?: string;
+  // Content options
   currentInput?: string;
   isTyping?: boolean;
 }
@@ -23,8 +29,10 @@ export function useTerminalCanvas(
   options: TerminalCanvasOptions = {}
 ): THREE.Texture | null {
   const {
-    width = 1024,
-    height = 768,
+    marginTopPx = 12,
+    marginRightPx = 12,
+    marginBottomPx = 36,
+    marginLeftPx = 12,
     backgroundColor = '#000000',
     textColor = '#ffffff',
     fontSize = 16,
@@ -38,15 +46,23 @@ export function useTerminalCanvas(
     isTyping = false,
   } = options;
 
+  // Get window size and calculate canvas dimensions
+  const windowSize = useWindowSize();
+  
+  // Calculate canvas dimensions the same way Monitor3D does
+  const canvasWidth = Math.max(windowSize.width - marginLeftPx - marginRightPx, 1);
+  const canvasHeight = Math.max(windowSize.height - marginTopPx - marginBottomPx, 1);
 
 
-  // Create canvas and texture once
+
+  // Create canvas and texture only when window size or margins change
   const { canvas, texture } = useMemo(() => {
+    console.log('🖼️ useTerminalCanvas: Creating canvas and texture (should only happen on window resize)', { canvasWidth, canvasHeight });
     if (typeof window === 'undefined') return { canvas: null, texture: null };
     
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     
     const texture = new THREE.Texture(canvas);
     texture.generateMipmaps = false;
@@ -56,7 +72,7 @@ export function useTerminalCanvas(
     texture.flipY = false;
     
     return { canvas, texture };
-  }, [width, height]);
+  }, [canvasWidth, canvasHeight]);
 
   // Set up 60fps continuous rendering loop (like a game engine)
   useEffect(() => {
@@ -68,12 +84,12 @@ export function useTerminalCanvas(
     const renderFrame = () => {
       // Clear canvas
       ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
       // Mirror the canvas vertically to fix orientation in 3D
       ctx.save();
       ctx.scale(1, -1);
-      ctx.translate(0, -height);
+      ctx.translate(0, -canvasHeight);
 
       // Set up text rendering
       ctx.fillStyle = textColor;
@@ -90,7 +106,7 @@ export function useTerminalCanvas(
         
         lines.forEach((line) => {
           // Simple word wrapping
-          const maxWidth = width - padding * 2;
+          const maxWidth = canvasWidth - padding * 2;
           const words = line.split(' ');
           let currentLine = '';
           
@@ -121,7 +137,7 @@ export function useTerminalCanvas(
       // Start from bottom - reserve proper space for input section
       // Input section in TerminalController has substantial padding: p-4 top + line height + p-4 bottom + border
       const inputSectionHeight = padding * 2 + actualLineHeight + spaceBetweenEntries * 3; // Extra generous spacing
-      let y = height - inputSectionHeight;
+      let y = canvasHeight - inputSectionHeight;
 
       // Draw terminal entries FIRST (from newest to oldest, bottom to top)
       const reversedEntries = [...entries].reverse();
@@ -142,7 +158,7 @@ export function useTerminalCanvas(
         const prompt = '> ';
         const inputText = prompt + currentInput;
         const inputX = padding;
-        const inputY = height - padding - actualLineHeight; // Bottom with padding
+        const inputY = canvasHeight - padding - actualLineHeight; // Bottom with padding
         
         ctx.fillStyle = textColor;
         ctx.fillText(inputText, inputX, inputY);
@@ -179,7 +195,7 @@ export function useTerminalCanvas(
     const interval = setInterval(renderFrame, 1000 / 60);
     
     return () => clearInterval(interval);
-  }, [canvas, texture, entries, backgroundColor, textColor, fontSize, fontFamily, lineHeight, padding, spaceBetweenEntries, showCursor, cursorColor, currentInput, isTyping, width, height]);
+  }, [canvas, texture, entries, backgroundColor, textColor, fontSize, fontFamily, lineHeight, padding, spaceBetweenEntries, showCursor, cursorColor, currentInput, isTyping, canvasWidth, canvasHeight]);
 
   return texture;
 } 

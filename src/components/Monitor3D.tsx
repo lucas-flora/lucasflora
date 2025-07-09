@@ -136,7 +136,6 @@ export default function Monitor3D({
 
   // Memoize all geometry calculations so they only update when window size or margins change
   const geometryData = useMemo(() => {
-    console.log('🔄 Monitor3D: Recalculating geometry (expensive operation)');
     // Compute world-units-per-CSS-pixel at the front face depth
     const fovRad = (camera.fov * Math.PI) / 180;
     // distance from camera to enclosure front face at Z=0
@@ -246,8 +245,8 @@ export default function Monitor3D({
 
   // Destructure all the geometry data for cleaner access
   const {
-    safeScreenPxWidth,
-    safeScreenPxHeight,
+    safeScreenPxWidth, // eslint-disable-line @typescript-eslint/no-unused-vars
+    safeScreenPxHeight, // eslint-disable-line @typescript-eslint/no-unused-vars
     xOffset,
     yOffset,
     screenMeshWidth,
@@ -321,10 +320,12 @@ export default function Monitor3D({
     uvNeedsUpdate.current = false;
   });
 
-  // Generate terminal texture using canvas rendering with safe dimensions
+  // Generate terminal texture using canvas rendering - canvas sizing handled internally
   const terminalTexture = useTerminalCanvas(terminalEntries, {
-    width: safeScreenPxWidth,
-    height: safeScreenPxHeight,
+    marginTopPx,
+    marginRightPx,
+    marginBottomPx,
+    marginLeftPx,
     backgroundColor: '#000000',
     textColor: '#ffffff',
     fontSize: 16,
@@ -340,6 +341,11 @@ export default function Monitor3D({
   useEffect(() => {
     console.log('✅ Monitor3D: Terminal content updated (cheap operation)', { currentInput, isTyping });
   }, [currentInput, isTyping]);
+
+  // Debug: Track when terminal texture gets recreated (should only happen on resize)
+  useEffect(() => {
+    console.log('🖼️ Monitor3D: Terminal texture potentially recreated');
+  }, [terminalTexture]);
 
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
