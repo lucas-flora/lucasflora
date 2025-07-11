@@ -221,7 +221,7 @@ export default function Home() {
   const [emissiveBoost, setEmissiveBoost] = useState(1.1);
 
   // Bloom parameters - Better defaults for the new setup
-  const [bloomIntensity, setBloomIntensity] = useState(1.90);
+  const [bloomIntensity, setBloomIntensity] = useState(2.3);
   const [bloomKernelSize, setBloomKernelSize] = useState(3);
   const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.4);

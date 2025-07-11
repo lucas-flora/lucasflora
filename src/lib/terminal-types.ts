@@ -1,6 +1,8 @@
+export type TerminalEntryType = 'text' | 'command' | 'widget' | 'image' | 'card' | 'pending';
+
 export interface TerminalEntry {
   id: string;
-  type: 'text' | 'command' | 'widget' | 'image' | 'card';
+  type: TerminalEntryType;
   timestamp: Date;
   render(): React.ReactNode;
 }
@@ -38,5 +40,21 @@ export class CommandEntry implements TerminalEntry {
 
   render() {
     return `> ${this.command}${this.output ? '\n' + this.output : ''}`;
+  }
+}
+
+export class PendingEntry implements TerminalEntry {
+  id: string;
+  type = 'pending' as const;
+  timestamp: Date;
+
+  constructor() {
+    this.id = crypto.randomUUID();
+    this.timestamp = new Date();
+  }
+
+  render() {
+    // Spinner glyphs can be animated later via setInterval or canvas logic
+    return '⠋ Nyx is thinking...';
   }
 }
