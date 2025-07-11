@@ -47,6 +47,7 @@ export class PendingEntry implements TerminalEntry {
   id: string;
   type = 'pending' as const;
   timestamp: Date;
+  private static readonly SPINNER_FRAMES = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
 
   constructor() {
     this.id = crypto.randomUUID();
@@ -54,7 +55,9 @@ export class PendingEntry implements TerminalEntry {
   }
 
   render() {
-    // Spinner glyphs can be animated later via setInterval or canvas logic
-    return '⠋ Nyx is thinking...';
+    // Animate spinner based on elapsed time (works with 60fps canvas rendering)
+    const elapsed = Date.now() - this.timestamp.getTime();
+    const frameIndex = Math.floor(elapsed / 80) % PendingEntry.SPINNER_FRAMES.length; // 80ms per frame = ~12.5 fps
+    return PendingEntry.SPINNER_FRAMES[frameIndex];
   }
 }
