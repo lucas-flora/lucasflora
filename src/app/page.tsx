@@ -4,9 +4,11 @@ import { useState, useRef } from 'react';
 import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
+import * as THREE from 'three';
 import dynamic from 'next/dynamic';
 import { useWebGPU } from '../utils/useWebGPU';
 import { useWindowSize } from '../utils/useWindowSize';
+import { useTerminalDOM } from '../utils/useTerminalDOM';
 import TerminalController from '../components/TerminalController';
 import FallbackPage from '../components/FallbackPage';
 import { TerminalEntry, TextEntry, PendingEntry } from '../lib/terminal-types';
@@ -62,9 +64,6 @@ function MainScene({
   bloomKernelSize,
   bloomLuminanceThreshold,
   bloomLuminanceSmoothing,
-  terminalEntries,
-  currentInput,
-  isTyping,
   debugMode,
   screenWorldWidth,
   screenWorldHeight,
@@ -80,6 +79,7 @@ function MainScene({
   ledRadiusPx,
   ledInset,
   checkerboardSize,
+  domTexture,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -97,9 +97,6 @@ function MainScene({
   bloomKernelSize: number;
   bloomLuminanceThreshold: number;
   bloomLuminanceSmoothing: number;
-  terminalEntries: TerminalEntry[];
-  currentInput: string;
-  isTyping: boolean;
   debugMode: number;
   screenWorldWidth: number;
   screenWorldHeight: number;
@@ -115,6 +112,7 @@ function MainScene({
   ledRadiusPx: number;
   ledInset: number;
   checkerboardSize: number;
+  domTexture: THREE.Texture | null;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -136,9 +134,6 @@ function MainScene({
         edgeTransition={edgeTransition}
         displacementAmount={displacementAmount}
         emissiveBoost={emissiveBoost}
-        terminalEntries={terminalEntries}
-        currentInput={currentInput}
-        isTyping={isTyping}
         debugMode={debugMode}
         cutoutRadius={cutoutRadius}
         bevelSize={bevelSize}
@@ -152,6 +147,7 @@ function MainScene({
         ledRadiusPx={ledRadiusPx}
         ledInset={ledInset}
         checkerboardSize={checkerboardSize}
+        terminalTexture={domTexture}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -247,6 +243,16 @@ export default function Home() {
   const marginRightPx = 12;
   const marginBottomPx = 36;
   const marginLeftPx = 12;
+
+  // NEW ARCHITECTURE: Render directly from entries data
+  const domTexture = useTerminalDOM(entries, currentInput, isTyping, {
+    marginTopPx,
+    marginRightPx, 
+    marginBottomPx,
+    marginLeftPx
+  });
+
+
 
   // Compute screen pixel and world sizes with safety checks
   const WORLD_PIXEL = 0.003;
@@ -370,9 +376,6 @@ export default function Home() {
           bloomKernelSize={bloomKernelSize}
           bloomLuminanceThreshold={bloomLuminanceThreshold}
           bloomLuminanceSmoothing={bloomLuminanceSmoothing}
-          terminalEntries={entries}
-          currentInput={currentInput}
-          isTyping={isTyping}
           debugMode={debugMode}
           screenWorldWidth={screenWorldWidth}
           screenWorldHeight={screenWorldHeight}
@@ -389,6 +392,7 @@ export default function Home() {
           // surroundRadius={surroundRadius}
           ledInset={ledInset}
           checkerboardSize={checkerboardSize}
+          domTexture={domTexture}
         />
       </Canvas>
 

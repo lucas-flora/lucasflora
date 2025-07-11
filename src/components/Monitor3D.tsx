@@ -29,8 +29,7 @@ function generateNoiseTexture(size = 512) {
   return texture;
 }
 // import { RoundedBoxGeometry } from '@react-three/drei';
-import { TerminalEntry } from '../lib/terminal-types';
-import { useTerminalCanvas } from '../utils/useTerminalCanvas';
+
 import { Geometry, Base, Subtraction } from '@react-three/csg';
 // Fixed thickness of monitor housing (front face to back)
 const HOUSING_DEPTH = 0.3;
@@ -49,9 +48,6 @@ interface Monitor3DProps {
   displacementAmount?: number;
   emissiveBoost?: number;
   checkerboardSize?: number;
-  terminalEntries?: TerminalEntry[];
-  currentInput?: string;
-  isTyping?: boolean;
   debugMode?: number;
   cutoutRadius?: number;
   bevelSize?: number;
@@ -66,6 +62,8 @@ interface Monitor3DProps {
   // LED indicator radius in px (will be converted to world units)
   ledRadiusPx?: number;
   ledInset?: number;
+  // NEW ARCHITECTURE: Accept texture directly from parent
+  terminalTexture?: THREE.Texture | null;
 }
 
 // Adjustable bump map intensity
@@ -109,9 +107,6 @@ export default function Monitor3D({
   displacementAmount = 0.07,
   emissiveBoost = 1.2,
   checkerboardSize = 0.05,
-  terminalEntries = [],
-  currentInput = '',
-  isTyping = false,
   debugMode = 0,
   cutoutRadius = 0.05,
   bevelSize = 0.01,
@@ -124,6 +119,7 @@ export default function Monitor3D({
   keyLightDistanceRel = 1.0,
   ledRadiusPx = 6,
   ledInset = 0.02,
+  terminalTexture: propTerminalTexture,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const frameMeshRef = useRef<THREE.Mesh>(null);
@@ -335,36 +331,15 @@ export default function Monitor3D({
     uvNeedsUpdate.current = false;
   });
 
-  // Generate terminal texture using canvas rendering - canvas sizing handled internally
-  const terminalTexture = useTerminalCanvas(terminalEntries, {
-    marginTopPx,
-    marginRightPx,
-    marginBottomPx,
-    marginLeftPx,
-    backgroundColor: '#000000',
-    textColor: '#ffffff',
-    fontSize: 16,
-    fontFamily: 'monospace',
-    lineHeight: 1.2,
-    padding: 16,
-    spaceBetweenEntries: 4,
-    currentInput,
-    isTyping
-  });
+  // NEW ARCHITECTURE: Use texture directly from parent
+  const terminalTexture = propTerminalTexture;
+  
 
-  // Debug: Track when terminal content changes (this should happen on typing)
-  useEffect(() => {
-    console.log('✅ Monitor3D: Terminal content updated (cheap operation)', { currentInput, isTyping });
-  }, [currentInput, isTyping]);
 
-  // Debug: Track when terminal texture gets recreated (should only happen on resize)
-  useEffect(() => {
-    console.log('🖼️ Monitor3D: Terminal texture potentially recreated');
-  }, [terminalTexture]);
+
 
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
-    console.log('🔧 Monitor3D: Creating screen cutout shape (should only happen on size changes)');
     const shape = new THREE.Shape();
     const w = safeScreenWorldWidth;
     const h = safeScreenWorldHeight;
@@ -395,7 +370,6 @@ export default function Monitor3D({
 
   // Memoize the entire CSG geometry JSX to prevent rebuilding on non-geometry changes
   const csgGeometry = useMemo(() => {
-    console.log('🏗️ Monitor3D: Creating CSG geometry JSX (should only happen on size changes)');
     return (
       <Geometry>
         <Base>
@@ -421,7 +395,6 @@ export default function Monitor3D({
 
   // Set the dirty flag when dependencies change - only size-related changes trigger UV updates
   useEffect(() => {
-    console.log('🔄 Monitor3D: UV update triggered (expensive operation)');
     uvNeedsUpdate.current = true;
   }, [frameNoiseScale, safeScreenWorldWidth, safeScreenWorldHeight, screenCutoutShape]);
 
