@@ -217,7 +217,7 @@ export default function Home() {
   const [emissiveBoost, setEmissiveBoost] = useState(1.1);
 
   // Bloom parameters - Better defaults for the new setup
-  const [bloomIntensity, setBloomIntensity] = useState(2.3);
+  const [bloomIntensity, setBloomIntensity] = useState(2.6);
   const [bloomKernelSize, setBloomKernelSize] = useState(3);
   const [bloomLuminanceThreshold, setBloomLuminanceThreshold] = useState(0.45);
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.4);
@@ -227,7 +227,7 @@ export default function Home() {
   // Temporarily increase the default for testing
   const [frameNoiseStrength, setFrameNoiseStrength] = useState(0.2);
   // Key light relative position
-  const [keyLightIntensity, setKeyLightIntensity] = useState(0.6);
+  const [keyLightIntensity, setKeyLightIntensity] = useState(0.4);
   const [keyLightXRel, setKeyLightXRel] = useState(-0.880);
   const [keyLightYRel, setKeyLightYRel] = useState(0.540);
   const [keyLightZRel, setKeyLightZRel] = useState(0.560);
