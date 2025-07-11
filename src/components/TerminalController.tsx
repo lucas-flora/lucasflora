@@ -58,8 +58,8 @@ export default function TerminalController({
     
     // Calculate available width (account for terminal padding and prompt)
     const promptWidth = ctx.measureText('> ').width;
-    const padding = 32; // p-4 = 16px on each side
-    const availableWidth = windowSize.width - padding - promptWidth - 50; // Extra margin for safety
+    const padding = 32; // Much larger padding for comfortable margins
+    const availableWidth = windowSize.width - padding - promptWidth - 150; // Much larger right margin
     
     const words = text.split(' ');
     const lines: string[] = [];
@@ -137,7 +137,7 @@ export default function TerminalController({
           {/* Terminal output area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-1 flex flex-col-reverse">
             {entries.slice().reverse().map((entry) => (
-              <div key={entry.id} className="whitespace-pre-wrap" style={{ marginLeft: promptIndent }}>
+              <div key={entry.id} className="whitespace-pre-wrap pr-16" style={{ marginLeft: promptIndent }}>
                 {entry.render()}
               </div>
             ))}
@@ -152,7 +152,7 @@ export default function TerminalController({
                 return wrappedLines.slice().reverse().map((line, index) => {
                   const isBottomLine = index === wrappedLines.length - 1;
                   return (
-                    <div key={index} className="flex items-center">
+                    <div key={index} className="flex items-center pr-16">
                       {isBottomLine && <span className="text-white mr-2">&gt;</span>}
                       {!isBottomLine && <span className="text-transparent mr-2 select-none">&gt;</span>} {/* Invisible prompt for alignment */}
                       <span className="whitespace-pre">{line}</span>

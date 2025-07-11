@@ -215,8 +215,8 @@ export default function Home() {
   const [bubbleSize, setBubbleSize] = useState(0.97);
   const [edgeTransition, setEdgeTransition] = useState(0.62);
   const [displacementAmount, setDisplacementAmount] = useState(0.30);
-  const [scanlineStrength, setScanlineStrength] = useState(0.1);
-  const [lineSpacing, setLineSpacing] = useState(3.0); // Pixel-units that get converted to world units
+  const [scanlineStrength, setScanlineStrength] = useState(0.4);
+  const [lineSpacing, setLineSpacing] = useState(1.4); // Pixel-units that get converted to world units
   const [checkerboardSize, setCheckerboardSize] = useState(0.12); // World units per checkerboard square
   const [emissiveBoost, setEmissiveBoost] = useState(1.1);
 

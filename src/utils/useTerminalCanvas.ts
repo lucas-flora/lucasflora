@@ -137,7 +137,9 @@ export function useTerminalCanvas(
       
       // Function to draw text with proper wrapping (fixed order)
       const drawText = (text: string, x: number, bottomY: number): number => {
-        const maxWidth = canvasWidth - padding * 2;
+        // Match TerminalController's aggressive padding: 96px base + 150px extra margin
+        const rightMargin = 32; // pr-16 = 64px right padding to match TerminalController
+        const maxWidth = canvasWidth - padding * 2 - rightMargin;
         const wrappedLines = calculateWrappedLines(text, maxWidth);
         
         // Draw lines from bottom to top so first line appears highest
@@ -153,7 +155,9 @@ export function useTerminalCanvas(
       
       // Function to draw input with proper wrapping (upward direction)
       const drawInputWithWrapping = (inputText: string, x: number, bottomY: number): { endY: number, cursorX: number, cursorY: number } => {
-        const maxWidth = canvasWidth - padding * 2;
+        // Match TerminalController's aggressive padding for input as well
+        const rightMargin = 32; // pr-16 = 64px right padding to match TerminalController
+        const maxWidth = canvasWidth - padding * 2 - rightMargin;
         
         // Calculate prompt width for proper indentation of wrapped lines
         const prompt = '> ';
@@ -193,7 +197,9 @@ export function useTerminalCanvas(
       if (currentInput || showCursor) {
         const prompt = '> ';
         const inputText = prompt + currentInput;
-        const maxWidth = canvasWidth - padding * 2;
+        // Match TerminalController's padding for line count calculation too
+        const rightMargin = 64; // pr-16 = 64px right padding to match TerminalController
+        const maxWidth = canvasWidth - padding * 2 - rightMargin;
         const inputWrappedLines = calculateWrappedLines(inputText, maxWidth);
         inputLineCount = Math.max(inputWrappedLines.length, 1);
       }
