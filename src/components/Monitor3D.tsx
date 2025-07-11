@@ -66,33 +66,6 @@ interface Monitor3DProps {
   terminalTexture?: THREE.Texture | null;
 }
 
-// Adjustable bump map intensity
-// const bumpScale = 2.0; // Increase for more pronounced texture
-// const filletRadius = 0.02; // Fillet radius for rounded edges
-// const filletSmoothness = 6; // Number of segments for smoothness
-
-// // Utility to generate a simple noise texture for bump mapping
-// function generateNoiseTexture(size = 128) {
-//   const canvas = document.createElement('canvas');
-//   canvas.width = canvas.height = size;
-//   const ctx = canvas.getContext('2d');
-//   if (!ctx) return new THREE.Texture(); // fallback: empty texture
-//   const imgData = ctx.createImageData(size, size);
-//   for (let i = 0; i < size * size * 4; i += 4) {
-//     const val = Math.floor(Math.random() * 64) + 192; // subtle noise
-//     imgData.data[i] = val;
-//     imgData.data[i + 1] = val;
-//     imgData.data[i + 2] = val;
-//     imgData.data[i + 3] = 255;
-//   }
-//   ctx.putImageData(imgData, 0, 0);
-//   const texture = new THREE.Texture(canvas);
-//   texture.needsUpdate = true;
-//   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-//   texture.repeat.set(8, 8);
-//   return texture;
-// }
-
 export default function Monitor3D({
   screenZ = -0.05,
   marginTopPx,
