@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useEffect } from 'react';
 import { useThree } from '@react-three/fiber';
 import { PerspectiveCamera } from 'three';
@@ -9,7 +9,7 @@ import { useWebGPU } from '../utils/useWebGPU';
 import { useWindowSize } from '../utils/useWindowSize';
 import TerminalController from '../components/TerminalController';
 import FallbackPage from '../components/FallbackPage';
-import { TerminalEntry } from '../lib/terminal-types';
+import { TerminalEntry, TextEntry, PendingEntry } from '../lib/terminal-types';
 
 // World units per CSS pixel (for frame thickness conversion)
 const WORLD_PIXEL = 0.003;
@@ -256,9 +256,55 @@ export default function Home() {
   const screenWorldWidth = screenPxWidth * WORLD_PIXEL;
   const screenWorldHeight = screenPxHeight * WORLD_PIXEL;
 
-  const handleEntriesChange = (newEntries: TerminalEntry[]) => {
-    setEntries(newEntries);
-    console.log('Entries updated:', newEntries);
+  // Queue & Spinner Logic (from chat integration plan)
+  const messageQueue = useRef<string[]>([]);
+  const processing = useRef(false);
+
+  const processQueue = async () => {
+    if (processing.current || messageQueue.current.length === 0) return;
+    processing.current = true;
+
+    const input = messageQueue.current.shift()!;
+    const userEntry = new TextEntry(input);
+    const pendingEntry = new PendingEntry();
+
+    setEntries(prev => [...prev, userEntry, pendingEntry]);
+
+    try {
+      const res = await fetch('/api/nyx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: input }] }),
+      });
+
+      if (!res.ok) {
+        console.error('API response not ok:', res.status, res.statusText);
+        const errorText = await res.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`API returned ${res.status}: ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      console.log('API response data:', data);
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const nyxReply = new TextEntry(data.content);
+      setEntries(prev => [...prev.filter(e => e.id !== pendingEntry.id), nyxReply]);
+    } catch (err) {
+      console.error('Nyx API error:', err);
+      setEntries(prev => [...prev.filter(e => e.id !== pendingEntry.id), new TextEntry('⚠️ Nyx encountered an error.')]);
+    } finally {
+      processing.current = false;
+      processQueue();
+    }
+  };
+
+  const handleUserSubmit = (input: string) => {
+    messageQueue.current.push(input);
+    processQueue();
   };
 
   // Show loading state while checking WebGPU support
@@ -418,9 +464,10 @@ export default function Home() {
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
         <div className="pointer-events-auto">
           <TerminalController
-            onEntriesChange={handleEntriesChange}
+            entries={entries}
             onCurrentInputChange={setCurrentInput}
             onTypingStateChange={setIsTyping}
+            onUserSubmit={handleUserSubmit}
             hideVisualContent={hideTerminalOverlay}
             yOffset={terminalYOffset}
           />

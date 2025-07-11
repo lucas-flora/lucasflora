@@ -2,24 +2,25 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useWindowSize } from '../utils/useWindowSize';
-import { TerminalEntry, TextEntry } from '../lib/terminal-types';
+import { TerminalEntry } from '../lib/terminal-types';
 
 interface TerminalControllerProps {
-  onEntriesChange: (entries: TerminalEntry[]) => void;
+  entries: TerminalEntry[];
   onCurrentInputChange?: (input: string) => void;
   onTypingStateChange?: (isTyping: boolean) => void;
+  onUserSubmit?: (input: string) => void;
   hideVisualContent?: boolean;
   yOffset?: number;
 }
 
 export default function TerminalController({ 
-  onEntriesChange, 
+  entries,
   onCurrentInputChange, 
   onTypingStateChange,
+  onUserSubmit,
   hideVisualContent = false,
   yOffset = 0
 }: TerminalControllerProps) {
-  const [entries, setEntries] = useState<TerminalEntry[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [, setIsInputFocused] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
@@ -102,15 +103,12 @@ export default function TerminalController({
     
     if (e.key === 'Enter') {
       if (currentInput.trim()) {
-        const newEntry = new TextEntry(currentInput);
-        const newEntries = [...entries, newEntry];
-        setEntries(newEntries);
-        onEntriesChange(newEntries);
+        onUserSubmit?.(currentInput.trim());
         setCurrentInput('');
         onCurrentInputChange?.(''); // Notify parent that input was cleared
       }
     }
-  }, [currentInput, entries, onEntriesChange, handleTyping, onCurrentInputChange]);
+  }, [currentInput, handleTyping, onCurrentInputChange, onUserSubmit]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newInput = e.target.value;
