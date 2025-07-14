@@ -289,7 +289,7 @@ export default function Home() {
   const [refractionIndex, setRefractionIndex] = useState(1.9);
   const [reflectionStrength, setReflectionStrength] = useState(0.03);
   const [glassTint, setGlassTint] = useState<[number, number, number]>([0.45, 0.53, 0.58]);
-  const [glassThickness, setGlassThickness] = useState(0.03);
+  const [glassThickness, setGlassThickness] = useState(0.008);
   const [fresnelPower, setFresnelPower] = useState(0.1);
   const [glassZOffset, setGlassZOffset] = useState(0.02);
   const [reflectionClamp, setReflectionClamp] = useState(0.09);
@@ -297,10 +297,10 @@ export default function Home() {
   // Chromatic aberration state
   const [chromaticAberrationBlackLevel, setChromaticAberrationBlackLevel] = useState(0.0);
   const [chromaticAberrationWhiteLevel, setChromaticAberrationWhiteLevel] = useState(0.58);
-  const [chromaticAberrationRedShift, setChromaticAberrationRedShift] = useState(1.5);
+  const [chromaticAberrationRedShift, setChromaticAberrationRedShift] = useState(1.0);
   const [chromaticAberrationGreenShift, setChromaticAberrationGreenShift] = useState(0);
   const [chromaticAberrationBlueShift, setChromaticAberrationBlueShift] = useState(-0.4);
-  const [chromaticAberrationStrength, setChromaticAberrationStrength] = useState(0.5);
+  const [chromaticAberrationStrength, setChromaticAberrationStrength] = useState(0.6);
 
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;

@@ -119,16 +119,36 @@ void main() {
     float aberrationMap = (invertedBubbleMap - chromaticAberrationBlackLevel) / (chromaticAberrationWhiteLevel - chromaticAberrationBlackLevel);
     aberrationMap = clamp(aberrationMap, 0.0, 1.0);
     
-    // Calculate shift amounts - controlled by strength multiplier, aberration map, and individual channel values
+    // Calculate base shift amounts for smearing direction
     float effectiveStrength = chromaticAberrationStrength * aberrationMap * 0.01;
     vec2 redShift = effectiveStrength * chromaticAberrationRedShift * vec2(1.0, 0.0);
     vec2 greenShift = effectiveStrength * chromaticAberrationGreenShift * vec2(1.0, 0.0);
     vec2 blueShift = effectiveStrength * chromaticAberrationBlueShift * vec2(1.0, 0.0);
     
-    // Sample each color channel with different UV offsets
-    float red = texture2D(screenTexture, vUv + redShift).r;
-    float green = texture2D(screenTexture, vUv + greenShift).g;
-    float blue = texture2D(screenTexture, vUv + blueShift).b;
+    // Sample each channel with concentrated bleeding effect
+    // Use strength to control blur radius - more concentrated samples for stronger bleeding
+    float blurRadius = chromaticAberrationStrength * aberrationMap * 0.005; // Tighter radius control
+    
+    // Red channel bleeding - concentrated near center with sharp falloff
+    float red = 0.0;
+    red += texture2D(screenTexture, vUv).r * 0.6;  // Center sample, very strong
+    red += texture2D(screenTexture, vUv + redShift * 0.3).r * 0.25;  // Close to center
+    red += texture2D(screenTexture, vUv + redShift * 0.7).r * 0.1;   // Moderate distance
+    red += texture2D(screenTexture, vUv + redShift).r * 0.05;        // Full shift, very weak
+    
+    // Green channel bleeding
+    float green = 0.0;
+    green += texture2D(screenTexture, vUv).g * 0.6;
+    green += texture2D(screenTexture, vUv + greenShift * 0.3).g * 0.25;
+    green += texture2D(screenTexture, vUv + greenShift * 0.7).g * 0.1;
+    green += texture2D(screenTexture, vUv + greenShift).g * 0.05;
+    
+    // Blue channel bleeding
+    float blue = 0.0;
+    blue += texture2D(screenTexture, vUv).b * 0.6;
+    blue += texture2D(screenTexture, vUv + blueShift * 0.3).b * 0.25;
+    blue += texture2D(screenTexture, vUv + blueShift * 0.7).b * 0.1;
+    blue += texture2D(screenTexture, vUv + blueShift).b * 0.05;
     
     chromaticColor = vec3(red, green, blue);
   }
