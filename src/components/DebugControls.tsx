@@ -67,6 +67,25 @@ interface DebugControlsProps {
   onSurroundRadiusChange: (value: number) => void;
   ledInset: number;
   onLedInsetChange: (value: number) => void;
+  // Glass overlay controls
+  enableGlassOverlay: boolean;
+  glassOpacity: number;
+  refractionIndex: number;
+  reflectionStrength: number;
+  glassTint: [number, number, number];
+  glassThickness: number;
+  fresnelPower: number;
+  glassZOffset: number;
+  onEnableGlassOverlayChange: (value: boolean) => void;
+  onGlassOpacityChange: (value: number) => void;
+  onRefractionIndexChange: (value: number) => void;
+  onReflectionStrengthChange: (value: number) => void;
+  onGlassTintChange: (value: [number, number, number]) => void;
+  onGlassThicknessChange: (value: number) => void;
+  onFresnelPowerChange: (value: number) => void;
+  onGlassZOffsetChange: (value: number) => void;
+  reflectionClamp: number;
+  onReflectionClampChange: (value: number) => void;
 }
 
 export default function DebugControls({
@@ -130,6 +149,25 @@ export default function DebugControls({
   // surroundRadius,
   onLedRadiusPxChange,
   // onSurroundRadiusChange,
+  // Glass overlay
+  enableGlassOverlay,
+  glassOpacity,
+  refractionIndex,
+  reflectionStrength,
+  glassTint,
+  glassThickness,
+  fresnelPower,
+  glassZOffset,
+  onEnableGlassOverlayChange,
+  onGlassOpacityChange,
+  onRefractionIndexChange,
+  onReflectionStrengthChange,
+  onGlassTintChange,
+  onGlassThicknessChange,
+  onFresnelPowerChange,
+  onGlassZOffsetChange,
+  reflectionClamp,
+  onReflectionClampChange,
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -587,11 +625,178 @@ export default function DebugControls({
           </div>
         </div>
         
+        <div className="border-t border-gray-600 pt-3">
+          <h4 className="text-xs font-bold text-gray-300 mb-2">Glass Overlay</h4>
+          
+          <div>
+            <label className="flex items-center space-x-2 mb-2">
+              <input
+                type="checkbox"
+                checked={enableGlassOverlay}
+                onChange={(e) => onEnableGlassOverlayChange(e.target.checked)}
+                className="form-checkbox"
+              />
+              <span className="text-xs text-gray-300">Enable Glass Overlay</span>
+            </label>
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Glass Opacity: {glassOpacity.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={glassOpacity}
+              onChange={(e) => onGlassOpacityChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Refraction Index: {refractionIndex.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={1.0}
+              max={2.5}
+              step={0.1}
+              value={refractionIndex}
+              onChange={(e) => onRefractionIndexChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Reflection Strength: {reflectionStrength.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={5.0}
+              step={0.01}
+              value={reflectionStrength}
+              onChange={(e) => onReflectionStrengthChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Glass Tint R: {glassTint[0].toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={glassTint[0]}
+              onChange={(e) => onGlassTintChange([parseFloat(e.target.value), glassTint[1], glassTint[2]])}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Glass Tint G: {glassTint[1].toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={glassTint[1]}
+              onChange={(e) => onGlassTintChange([glassTint[0], parseFloat(e.target.value), glassTint[2]])}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Glass Tint B: {glassTint[2].toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={glassTint[2]}
+              onChange={(e) => onGlassTintChange([glassTint[0], glassTint[1], parseFloat(e.target.value)])}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Glass Thickness: {glassThickness.toFixed(3)}
+            </label>
+            <input
+              type="range"
+              min={0.001}
+              max={0.05}
+              step={0.001}
+              value={glassThickness}
+              onChange={(e) => onGlassThicknessChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Fresnel Power: {fresnelPower.toFixed(1)}
+            </label>
+            <input
+              type="range"
+              min={0.01}
+              max={1.0}
+              step={0.01}
+              value={fresnelPower}
+              onChange={(e) => onFresnelPowerChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Glass Z Offset: {glassZOffset.toFixed(3)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={0.02}
+              step={0.001}
+              value={glassZOffset}
+              onChange={(e) => onGlassZOffsetChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Reflection Clamp: {reflectionClamp.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={reflectionClamp}
+              onChange={(e) => onReflectionClampChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+        </div>
+        
         <div className="text-xs text-gray-400 mt-2">
           <div>Housing front should be closest to camera</div>
           <div>Screen should be recessed into housing</div>
           <div>Bloom enhances bright screen content</div>
           <div>Hide overlay to rely on 3D terminal texture</div>
+          <div>Glass overlay adds CRT screen bubble effect</div>
         </div>
       </div>
     </div>

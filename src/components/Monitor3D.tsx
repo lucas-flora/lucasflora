@@ -2,11 +2,17 @@
 
 import { useRef, useMemo, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera } from 'three';
+import { LinearFilter, PerspectiveCamera } from 'three';
 import { useWindowSize } from '../utils/useWindowSize';
 import ScreenMesh from './ScreenMesh';
 // import MonitorShaderMaterial from './MonitorShaderMaterial';
 import * as THREE from 'three';
+import {
+  WebGLCubeRenderTarget,
+  CubeCamera,
+  LinearMipmapLinearFilter,
+  RGBAFormat,
+} from 'three';
 
 // Utility to generate a simple noise texture for bump mapping
 function generateNoiseTexture(size = 512) {
@@ -64,6 +70,16 @@ interface Monitor3DProps {
   ledInset?: number;
   // NEW ARCHITECTURE: Accept texture directly from parent
   terminalTexture?: THREE.Texture | null;
+  // Glass overlay properties
+  enableGlassOverlay?: boolean;
+  glassOpacity?: number;
+  refractionIndex?: number;
+  reflectionStrength?: number;
+  glassTint?: [number, number, number];
+  glassThickness?: number;
+  fresnelPower?: number;
+  glassZOffset?: number;
+  reflectionClamp?: number;
 }
 
 export default function Monitor3D({
@@ -93,6 +109,15 @@ export default function Monitor3D({
   ledRadiusPx = 6,
   ledInset = 0.02,
   terminalTexture: propTerminalTexture,
+  enableGlassOverlay = true,
+  glassOpacity = 0.1,
+  refractionIndex = 1.5,
+  reflectionStrength = 0.3,
+  glassTint = [0.9, 0.95, 1.0],
+  glassThickness = 0.01,
+  fresnelPower = 2.0,
+  glassZOffset = 0.005,
+  reflectionClamp = 1.0,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const frameMeshRef = useRef<THREE.Mesh>(null);
@@ -103,9 +128,33 @@ export default function Monitor3D({
   // Track window size for world-unit calculation using centralized hook
   const windowSize = useWindowSize();
 
+    // How wide vs tall the viewport is
+  const aspectRatio = windowSize.width / windowSize.height;
+  // You can tweak this “strength” if aspectRatio alone is too aggressive
+  const horizontalMultiplier = aspectRatio; 
+
   // Get camera reference outside of useMemo to avoid React Hook rules violation
   const { camera: genericCamera } = useThree();
   const camera = genericCamera as PerspectiveCamera;
+
+  const { gl, scene } = useThree();
+
+  const cubeRenderTarget = useMemo(
+    () =>
+      new WebGLCubeRenderTarget(1024, {
+        format: RGBAFormat,
+        generateMipmaps: true,
+        minFilter: LinearMipmapLinearFilter,
+        magFilter: LinearFilter,
+      }),
+    []
+  );
+
+  const cubeCamera = useRef<CubeCamera>(null!);
+
+  useFrame(() => {
+    if (cubeCamera.current) cubeCamera.current.update(gl, scene);
+  });
 
   // Memoize all geometry calculations so they only update when window size or margins change
   const geometryData = useMemo(() => {
@@ -307,10 +356,6 @@ export default function Monitor3D({
   // NEW ARCHITECTURE: Use texture directly from parent
   const terminalTexture = propTerminalTexture;
   
-
-
-
-
   // Memoize the extruded screen cutout geometry for the CSG subtraction
   const screenCutoutShape = useMemo(() => {
     const shape = new THREE.Shape();
@@ -371,8 +416,45 @@ export default function Monitor3D({
     uvNeedsUpdate.current = true;
   }, [frameNoiseScale, safeScreenWorldWidth, safeScreenWorldHeight, screenCutoutShape]);
 
+  // define bounce boards for reflections
+  const screenHalfWidth  = screenMeshWidth  / 2 + 0.2;  // add small padding if desired
+  const screenHalfHeight = screenMeshHeight / 2 + 0.2;
+  const boardZOffset     = 8; // how far behind camera for cube‐map reflections
+
+  const bounceBoards = [
+    {
+      xNorm:  0.8, yNorm:  -0.65,
+      widthNorm:  0.03, heightNorm: 0.3,
+      rotationY: Math.PI / 4,
+    },
+    {
+      xNorm:  0.6, yNorm:  -0.4,
+      widthNorm:  0.02, heightNorm: 0.2,
+      rotationY: Math.PI / 4,
+    },
+    {
+      xNorm: -0.8, yNorm:  0.8,
+      widthNorm:  0.05, heightNorm: 0.05,
+      rotationY: -Math.PI / 4,
+    },
+    {
+      xNorm: -0.8, yNorm:  0.6,
+      widthNorm:  0.05, heightNorm: 0.08,
+      rotationY: -Math.PI / 4,
+    },
+    // add more boards here…
+  ];
+  
+
+
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, -baseDepth / 2]}>
+      {/* cube camera for reflections */}
+      <cubeCamera
+        ref={cubeCamera}
+        args={[0.1, 1000, cubeRenderTarget]}
+        position={[0, 0, glassZOffset + (glassThickness || 0) / 2]}
+      />
       {/* Frame using memoized CSG geometry */}
       <mesh ref={frameMeshRef} castShadow receiveShadow>
         {csgGeometry}
@@ -394,9 +476,58 @@ export default function Monitor3D({
           emissiveBoost={emissiveBoost}
           terminalTexture={terminalTexture}
           checkerboardSize={checkerboardSize}
+          enableGlassOverlay={enableGlassOverlay}
+          glassOpacity={glassOpacity}
+          refractionIndex={refractionIndex}
+          reflectionStrength={reflectionStrength}
+          glassTint={glassTint}
+          glassThickness={glassThickness}
+          fresnelPower={fresnelPower}
+          glassZOffset={glassZOffset}
+          envMap={cubeRenderTarget.texture}
+          reflectionClamp={reflectionClamp}
         />
       </group>
-      {/* Lighting */}
+      {/* White bounce boards */}
+      {/* <mesh rotation={[0, Math.PI / 4, 0]} position={[boardXPos, boardYPos, boardDepth]}>
+        <planeGeometry args={[boardWidth, boardHeight]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[0, -Math.PI / 4, 0]} position={[-boardXPos, boardYPos, boardDepth]}>
+        <planeGeometry args={[boardWidth, boardHeight]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+      </mesh> */}
+      {/* {bounceBoardConfigs.map((b, i) => (
+        <mesh
+          key={i}
+          rotation={[0, b.rotationY, 0]}
+          // place each at (x,y) but z = camera.position.z + boardZOffset
+          position={[b.x, b.y, camera.position.z + boardZOffset]}
+        >
+          <planeGeometry args={[b.width, b.height]} />
+          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+        </mesh>
+      ))} */}
+      {bounceBoards.map((b, i) => {
+        const x = b.xNorm * screenHalfWidth * horizontalMultiplier;
+        const y = b.yNorm * screenHalfHeight;
+        const w = b.widthNorm  * screenHalfWidth * 2;
+        const h = b.heightNorm * screenHalfHeight * 2;
+        return (
+          <mesh
+            key={i}
+            rotation={[0, b.rotationY, 0]}
+            position={[
+              x,
+              y,
+              glassZOffset + (glassThickness || 0) / 2 + boardZOffset
+            ]}          >
+            <planeGeometry args={[w, h]} />
+            <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+
       {/* Key light */}
       <pointLight
         // Position the light relative to current frame and camera size:

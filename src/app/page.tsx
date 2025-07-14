@@ -80,6 +80,15 @@ function MainScene({
   ledInset,
   checkerboardSize,
   domTexture,
+  enableGlassOverlay,
+  glassOpacity,
+  refractionIndex,
+  reflectionStrength,
+  glassTint,
+  glassThickness,
+  fresnelPower,
+  glassZOffset,
+  reflectionClamp,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -113,6 +122,15 @@ function MainScene({
   ledInset: number;
   checkerboardSize: number;
   domTexture: THREE.Texture | null;
+  enableGlassOverlay: boolean;
+  glassOpacity: number;
+  refractionIndex: number;
+  reflectionStrength: number;
+  glassTint: [number, number, number];
+  glassThickness: number;
+  fresnelPower: number;
+  glassZOffset: number;
+  reflectionClamp: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -148,6 +166,15 @@ function MainScene({
         ledInset={ledInset}
         checkerboardSize={checkerboardSize}
         terminalTexture={domTexture}
+        enableGlassOverlay={enableGlassOverlay}
+        glassOpacity={glassOpacity}
+        refractionIndex={refractionIndex}
+        reflectionStrength={reflectionStrength}
+        glassTint={glassTint}
+        glassThickness={glassThickness}
+        fresnelPower={fresnelPower}
+        glassZOffset={glassZOffset}
+        reflectionClamp={reflectionClamp}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -195,7 +222,7 @@ export default function Home() {
 
   // Debug positioning state (removed camera - using fixed position)
   const [housingZ, setHousingZ] = useState(-0.2);
-  const [screenZ, setScreenZ] = useState(-0.05);
+  const [screenZ, setScreenZ] = useState(-0.100);
   const [debugMode, setDebugMode] = useState(0);
 
   // Added debug states for cutoutRadius and bevelSize
@@ -210,9 +237,9 @@ export default function Home() {
   const [cornerRoundness, setCornerRoundness] = useState(0.5);
   const [bubbleSize, setBubbleSize] = useState(0.97);
   const [edgeTransition, setEdgeTransition] = useState(0.62);
-  const [displacementAmount, setDisplacementAmount] = useState(0.30);
+  const [displacementAmount, setDisplacementAmount] = useState(0.40);
   const [scanlineStrength, setScanlineStrength] = useState(0.4);
-  const [lineSpacing, setLineSpacing] = useState(1.4); // Pixel-units that get converted to world units
+  const [lineSpacing, setLineSpacing] = useState(1.3); // Pixel-units that get converted to world units
   const [checkerboardSize, setCheckerboardSize] = useState(0.12); // World units per checkerboard square
   const [emissiveBoost, setEmissiveBoost] = useState(1.1);
 
@@ -223,9 +250,9 @@ export default function Home() {
   const [bloomLuminanceSmoothing, setBloomLuminanceSmoothing] = useState(0.4);
 
   // Added frame noise parameters (updated per instructions)
-  const [frameNoiseScale, setFrameNoiseScale] = useState(.9);
+  const [frameNoiseScale, setFrameNoiseScale] = useState(0.4);
   // Temporarily increase the default for testing
-  const [frameNoiseStrength, setFrameNoiseStrength] = useState(0.2);
+  const [frameNoiseStrength, setFrameNoiseStrength] = useState(0.4);
   // Key light relative position
   const [keyLightIntensity, setKeyLightIntensity] = useState(0.4);
   const [keyLightXRel, setKeyLightXRel] = useState(-0.880);
@@ -237,6 +264,17 @@ export default function Home() {
   const [ledRadiusPx, setLedRadiusPx] = useState(6);
   const [surroundRadius, setSurroundRadius] = useState(0.1);
   const [ledInset, setLedInset] = useState(0.005);
+  
+  // Glass overlay state
+  const [enableGlassOverlay, setEnableGlassOverlay] = useState(true);
+  const [glassOpacity, setGlassOpacity] = useState(0.02);
+  const [refractionIndex, setRefractionIndex] = useState(1.9);
+  const [reflectionStrength, setReflectionStrength] = useState(1.3);
+  const [glassTint, setGlassTint] = useState<[number, number, number]>([0.45, 0.53, 0.58]);
+  const [glassThickness, setGlassThickness] = useState(0.05);
+  const [fresnelPower, setFresnelPower] = useState(0.01);
+  const [glassZOffset, setGlassZOffset] = useState(0.02);
+  const [reflectionClamp, setReflectionClamp] = useState(0.08);
 
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;
@@ -393,6 +431,15 @@ export default function Home() {
           ledInset={ledInset}
           checkerboardSize={checkerboardSize}
           domTexture={domTexture}
+          enableGlassOverlay={enableGlassOverlay}
+          glassOpacity={glassOpacity}
+          refractionIndex={refractionIndex}
+          reflectionStrength={reflectionStrength}
+          glassTint={glassTint}
+          glassThickness={glassThickness}
+          fresnelPower={fresnelPower}
+          glassZOffset={glassZOffset}
+          reflectionClamp={reflectionClamp}
         />
       </Canvas>
 
@@ -459,6 +506,24 @@ export default function Home() {
           onLedInsetChange={setLedInset}
           checkerboardSize={checkerboardSize}
           onCheckerboardSizeChange={setCheckerboardSize}
+          enableGlassOverlay={enableGlassOverlay}
+          glassOpacity={glassOpacity}
+          refractionIndex={refractionIndex}
+          reflectionStrength={reflectionStrength}
+          glassTint={glassTint}
+          glassThickness={glassThickness}
+          fresnelPower={fresnelPower}
+          glassZOffset={glassZOffset}
+          onEnableGlassOverlayChange={setEnableGlassOverlay}
+          onGlassOpacityChange={setGlassOpacity}
+          onRefractionIndexChange={setRefractionIndex}
+          onReflectionStrengthChange={setReflectionStrength}
+          onGlassTintChange={setGlassTint}
+          onGlassThicknessChange={setGlassThickness}
+          onFresnelPowerChange={setFresnelPower}
+          onGlassZOffsetChange={setGlassZOffset}
+          reflectionClamp={reflectionClamp}
+          onReflectionClampChange={setReflectionClamp}
         />
       )}
 

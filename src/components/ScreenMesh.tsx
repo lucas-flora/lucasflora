@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import ScreenShaderMaterial from './ScreenShaderMaterial';
+import GlassOverlay from './GlassOverlay';
 
 interface ScreenMeshProps {
   width: number;
@@ -18,6 +19,17 @@ interface ScreenMeshProps {
   emissiveBoost?: number;
   checkerboardSize?: number;
   terminalTexture?: THREE.Texture | null;
+  // Glass overlay properties
+  enableGlassOverlay?: boolean;
+  glassOpacity?: number;
+  refractionIndex?: number;
+  reflectionStrength?: number;
+  glassTint?: [number, number, number];
+  glassThickness?: number;
+  fresnelPower?: number;
+  glassZOffset?: number;
+  envMap?: THREE.CubeTexture;
+  reflectionClamp?: number;
 }
 
 export default function ScreenMesh({ 
@@ -33,7 +45,18 @@ export default function ScreenMesh({
   displacementAmount = 0.07,
   emissiveBoost = 1.2,
   checkerboardSize = 0.1,
-  terminalTexture
+  terminalTexture,
+  // Glass overlay properties
+  enableGlassOverlay = true,
+  glassOpacity = 0.1,
+  refractionIndex = 1.5,
+  reflectionStrength = 0.3,
+  glassTint = [0.9, 0.95, 1.0],
+  glassThickness = 0.01,
+  fresnelPower = 2.0,
+  glassZOffset = 0.005,
+  envMap,
+  reflectionClamp = 1.0,
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -45,27 +68,52 @@ export default function ScreenMesh({
   }, [width, height]);
 
   return (
-    <mesh 
-      ref={meshRef}
-      geometry={subdivisionGeometry}
-      position={[0, yOffset, 0]}
-      castShadow={false}
-      receiveShadow={false}
-    >
-      <ScreenShaderMaterial 
-        debugMode={debugMode}
-        scanlineStrength={scanlineStrength}
-        lineSpacing={lineSpacing}
-        cornerRoundness={cornerRoundness}
-        bubbleSize={bubbleSize}
-        edgeTransition={edgeTransition}
-        displacementAmount={displacementAmount}
-        emissiveBoost={emissiveBoost}
-        terminalTexture={terminalTexture || undefined}
-        screenWidth={width}
-        screenHeight={height}
-        checkerboardSize={checkerboardSize}
-      />
-    </mesh>
+    <group>
+      {/* Main screen mesh */}
+      <mesh 
+        ref={meshRef}
+        geometry={subdivisionGeometry}
+        position={[0, yOffset, 0]}
+        castShadow={false}
+        receiveShadow={false}
+      >
+        <ScreenShaderMaterial 
+          debugMode={debugMode}
+          scanlineStrength={scanlineStrength}
+          lineSpacing={lineSpacing}
+          cornerRoundness={cornerRoundness}
+          bubbleSize={bubbleSize}
+          edgeTransition={edgeTransition}
+          displacementAmount={displacementAmount}
+          emissiveBoost={emissiveBoost}
+          terminalTexture={terminalTexture || undefined}
+          screenWidth={width}
+          screenHeight={height}
+          checkerboardSize={checkerboardSize}
+        />
+      </mesh>
+      
+      {/* Glass overlay mesh */}
+      {enableGlassOverlay && (
+        <GlassOverlay
+          width={width}
+          height={height}
+          yOffset={yOffset}
+          cornerRoundness={cornerRoundness}
+          bubbleSize={bubbleSize}
+          edgeTransition={edgeTransition}
+          displacementAmount={displacementAmount}
+          glassOpacity={glassOpacity}
+          refractionIndex={refractionIndex}
+          reflectionStrength={reflectionStrength}
+          glassTint={glassTint}
+          glassThickness={glassThickness}
+          fresnelPower={fresnelPower}
+          glassZOffset={glassZOffset}
+          envMap={envMap}
+          reflectionClamp={reflectionClamp}
+        />
+      )}
+    </group>
   );
 } 
