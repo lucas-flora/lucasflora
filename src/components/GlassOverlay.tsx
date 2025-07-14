@@ -21,6 +21,14 @@ interface GlassOverlayProps {
   glassZOffset?: number; // How far in front of screen to place glass
   envMap?: THREE.CubeTexture;
   reflectionClamp?: number;
+  // Chromatic aberration props
+  screenTexture?: THREE.Texture;
+  chromaticAberrationBlackLevel?: number;
+  chromaticAberrationWhiteLevel?: number;
+  chromaticAberrationRedShift?: number;
+  chromaticAberrationGreenShift?: number;
+  chromaticAberrationBlueShift?: number;
+  chromaticAberrationStrength?: number;
 }
 
 export default function GlassOverlay({ 
@@ -40,6 +48,14 @@ export default function GlassOverlay({
   glassZOffset = 0.005, // Small offset in front of screen
   envMap,
   reflectionClamp,
+  // Chromatic aberration defaults
+  screenTexture,
+  chromaticAberrationBlackLevel = 0.0,
+  chromaticAberrationWhiteLevel = 1.0,
+  chromaticAberrationRedShift = -1.0,
+  chromaticAberrationGreenShift = 0.0,
+  chromaticAberrationBlueShift = 1.0,
+  chromaticAberrationStrength = 0.0,
 }: GlassOverlayProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -98,6 +114,13 @@ export default function GlassOverlay({
         fresnelPower={fresnelPower}
         envMap={envMap}
         reflectionClamp={reflectionClamp}
+        screenTexture={screenTexture}
+        chromaticAberrationBlackLevel={chromaticAberrationBlackLevel}
+        chromaticAberrationWhiteLevel={chromaticAberrationWhiteLevel}
+        chromaticAberrationRedShift={chromaticAberrationRedShift}
+        chromaticAberrationGreenShift={chromaticAberrationGreenShift}
+        chromaticAberrationBlueShift={chromaticAberrationBlueShift}
+        chromaticAberrationStrength={chromaticAberrationStrength}
       />
     </mesh>
   );

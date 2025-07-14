@@ -86,6 +86,19 @@ interface DebugControlsProps {
   onGlassZOffsetChange: (value: number) => void;
   reflectionClamp: number;
   onReflectionClampChange: (value: number) => void;
+  // Chromatic aberration controls
+  chromaticAberrationBlackLevel: number;
+  chromaticAberrationWhiteLevel: number;
+  chromaticAberrationRedShift: number;
+  chromaticAberrationGreenShift: number;
+  chromaticAberrationBlueShift: number;
+  onChromaticAberrationBlackLevelChange: (value: number) => void;
+  onChromaticAberrationWhiteLevelChange: (value: number) => void;
+  onChromaticAberrationRedShiftChange: (value: number) => void;
+  onChromaticAberrationGreenShiftChange: (value: number) => void;
+  onChromaticAberrationBlueShiftChange: (value: number) => void;
+  chromaticAberrationStrength: number;
+  onChromaticAberrationStrengthChange: (value: number) => void;
 }
 
 export default function DebugControls({
@@ -168,6 +181,19 @@ export default function DebugControls({
   onGlassZOffsetChange,
   reflectionClamp,
   onReflectionClampChange,
+  // Chromatic aberration
+  chromaticAberrationBlackLevel,
+  chromaticAberrationWhiteLevel,
+  chromaticAberrationRedShift,
+  chromaticAberrationGreenShift,
+  chromaticAberrationBlueShift,
+  chromaticAberrationStrength,
+  onChromaticAberrationBlackLevelChange,
+  onChromaticAberrationWhiteLevelChange,
+  onChromaticAberrationRedShiftChange,
+  onChromaticAberrationGreenShiftChange,
+  onChromaticAberrationBlueShiftChange,
+  onChromaticAberrationStrengthChange,
 }: DebugControlsProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -786,6 +812,98 @@ export default function DebugControls({
               step={0.01}
               value={reflectionClamp}
               onChange={(e) => onReflectionClampChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <h5 className="text-xs font-bold text-gray-300 mt-3 mb-2">Chromatic Aberration</h5>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Black Level: {chromaticAberrationBlackLevel.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={chromaticAberrationBlackLevel}
+              onChange={(e) => onChromaticAberrationBlackLevelChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              White Level: {chromaticAberrationWhiteLevel.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={chromaticAberrationWhiteLevel}
+              onChange={(e) => onChromaticAberrationWhiteLevelChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Red Shift: {chromaticAberrationRedShift.toFixed(1)}
+            </label>
+            <input
+              type="range"
+              min={-3.0}
+              max={3.0}
+              step={0.1}
+              value={chromaticAberrationRedShift}
+              onChange={(e) => onChromaticAberrationRedShiftChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Green Shift: {chromaticAberrationGreenShift.toFixed(1)}
+            </label>
+            <input
+              type="range"
+              min={-3.0}
+              max={3.0}
+              step={0.1}
+              value={chromaticAberrationGreenShift}
+              onChange={(e) => onChromaticAberrationGreenShiftChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Blue Shift: {chromaticAberrationBlueShift.toFixed(1)}
+            </label>
+            <input
+              type="range"
+              min={-3.0}
+              max={3.0}
+              step={0.1}
+              value={chromaticAberrationBlueShift}
+              onChange={(e) => onChromaticAberrationBlueShiftChange(parseFloat(e.target.value))}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-300 mb-1">
+              Strength: {chromaticAberrationStrength.toFixed(1)}
+            </label>
+            <input
+              type="range"
+              min={0.0}
+              max={1.0}
+              step={0.01}
+              value={chromaticAberrationStrength}
+              onChange={(e) => onChromaticAberrationStrengthChange(parseFloat(e.target.value))}
               className="w-full"
             />
           </div>

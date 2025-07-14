@@ -89,6 +89,12 @@ function MainScene({
   fresnelPower,
   glassZOffset,
   reflectionClamp,
+  chromaticAberrationBlackLevel,
+  chromaticAberrationWhiteLevel,
+  chromaticAberrationRedShift,
+  chromaticAberrationGreenShift,
+  chromaticAberrationBlueShift,
+  chromaticAberrationStrength,
 }: {
   screenZ: number;
   marginTopPx: number;
@@ -131,6 +137,12 @@ function MainScene({
   fresnelPower: number;
   glassZOffset: number;
   reflectionClamp: number;
+  chromaticAberrationBlackLevel: number;
+  chromaticAberrationWhiteLevel: number;
+  chromaticAberrationRedShift: number;
+  chromaticAberrationGreenShift: number;
+  chromaticAberrationBlueShift: number;
+  chromaticAberrationStrength: number;
 }) {
 
   // Compute total monitor size in world units (screen + bezel)
@@ -175,6 +187,12 @@ function MainScene({
         fresnelPower={fresnelPower}
         glassZOffset={glassZOffset}
         reflectionClamp={reflectionClamp}
+        chromaticAberrationBlackLevel={chromaticAberrationBlackLevel}
+        chromaticAberrationWhiteLevel={chromaticAberrationWhiteLevel}
+        chromaticAberrationRedShift={chromaticAberrationRedShift}
+        chromaticAberrationGreenShift={chromaticAberrationGreenShift}
+        chromaticAberrationBlueShift={chromaticAberrationBlueShift}
+        chromaticAberrationStrength={chromaticAberrationStrength}
       />
 
       {/* Auto‐fit camera to the monitor dimensions */}
@@ -267,14 +285,22 @@ export default function Home() {
   
   // Glass overlay state
   const [enableGlassOverlay, setEnableGlassOverlay] = useState(true);
-  const [glassOpacity, setGlassOpacity] = useState(0.02);
+  const [glassOpacity, setGlassOpacity] = useState(0.99);
   const [refractionIndex, setRefractionIndex] = useState(1.9);
-  const [reflectionStrength, setReflectionStrength] = useState(1.3);
+  const [reflectionStrength, setReflectionStrength] = useState(0.2);
   const [glassTint, setGlassTint] = useState<[number, number, number]>([0.45, 0.53, 0.58]);
-  const [glassThickness, setGlassThickness] = useState(0.05);
+  const [glassThickness, setGlassThickness] = useState(0.03);
   const [fresnelPower, setFresnelPower] = useState(0.01);
   const [glassZOffset, setGlassZOffset] = useState(0.02);
-  const [reflectionClamp, setReflectionClamp] = useState(0.08);
+  const [reflectionClamp, setReflectionClamp] = useState(0.09);
+  
+  // Chromatic aberration state
+  const [chromaticAberrationBlackLevel, setChromaticAberrationBlackLevel] = useState(0.0);
+  const [chromaticAberrationWhiteLevel, setChromaticAberrationWhiteLevel] = useState(0.58);
+  const [chromaticAberrationRedShift, setChromaticAberrationRedShift] = useState(1.5);
+  const [chromaticAberrationGreenShift, setChromaticAberrationGreenShift] = useState(0);
+  const [chromaticAberrationBlueShift, setChromaticAberrationBlueShift] = useState(-0.4);
+  const [chromaticAberrationStrength, setChromaticAberrationStrength] = useState(0.5);
 
   // Margins (should match MainScene and Monitor3D)
   const marginTopPx = 12;
@@ -440,6 +466,12 @@ export default function Home() {
           fresnelPower={fresnelPower}
           glassZOffset={glassZOffset}
           reflectionClamp={reflectionClamp}
+          chromaticAberrationBlackLevel={chromaticAberrationBlackLevel}
+          chromaticAberrationWhiteLevel={chromaticAberrationWhiteLevel}
+          chromaticAberrationRedShift={chromaticAberrationRedShift}
+          chromaticAberrationGreenShift={chromaticAberrationGreenShift}
+          chromaticAberrationBlueShift={chromaticAberrationBlueShift}
+          chromaticAberrationStrength={chromaticAberrationStrength}
         />
       </Canvas>
 
@@ -524,6 +556,18 @@ export default function Home() {
           onGlassZOffsetChange={setGlassZOffset}
           reflectionClamp={reflectionClamp}
           onReflectionClampChange={setReflectionClamp}
+          chromaticAberrationBlackLevel={chromaticAberrationBlackLevel}
+          chromaticAberrationWhiteLevel={chromaticAberrationWhiteLevel}
+          chromaticAberrationRedShift={chromaticAberrationRedShift}
+          chromaticAberrationGreenShift={chromaticAberrationGreenShift}
+          chromaticAberrationBlueShift={chromaticAberrationBlueShift}
+          onChromaticAberrationBlackLevelChange={setChromaticAberrationBlackLevel}
+          onChromaticAberrationWhiteLevelChange={setChromaticAberrationWhiteLevel}
+          onChromaticAberrationRedShiftChange={setChromaticAberrationRedShift}
+          onChromaticAberrationGreenShiftChange={setChromaticAberrationGreenShift}
+          onChromaticAberrationBlueShiftChange={setChromaticAberrationBlueShift}
+          chromaticAberrationStrength={chromaticAberrationStrength}
+          onChromaticAberrationStrengthChange={setChromaticAberrationStrength}
         />
       )}
 

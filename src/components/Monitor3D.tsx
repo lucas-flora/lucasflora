@@ -1,18 +1,20 @@
 'use client';
 
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { LinearFilter, PerspectiveCamera } from 'three';
+import { PerspectiveCamera } from 'three';
 import { useWindowSize } from '../utils/useWindowSize';
 import ScreenMesh from './ScreenMesh';
 // import MonitorShaderMaterial from './MonitorShaderMaterial';
 import * as THREE from 'three';
 import {
-  WebGLCubeRenderTarget,
-  CubeCamera,
-  LinearMipmapLinearFilter,
-  RGBAFormat,
+  // WebGLCubeRenderTarget,
+  // LinearMipmapLinearFilter,
+  // RGBAFormat,
+  CubeTexture,
 } from 'three';
+import { CubeCamera as DreiCubeCamera } from '@react-three/drei';
+
 
 // Utility to generate a simple noise texture for bump mapping
 function generateNoiseTexture(size = 512) {
@@ -80,6 +82,13 @@ interface Monitor3DProps {
   fresnelPower?: number;
   glassZOffset?: number;
   reflectionClamp?: number;
+  // Chromatic aberration properties
+  chromaticAberrationBlackLevel?: number;
+  chromaticAberrationWhiteLevel?: number;
+  chromaticAberrationRedShift?: number;
+  chromaticAberrationGreenShift?: number;
+  chromaticAberrationBlueShift?: number;
+  chromaticAberrationStrength?: number;
 }
 
 export default function Monitor3D({
@@ -118,6 +127,13 @@ export default function Monitor3D({
   fresnelPower = 2.0,
   glassZOffset = 0.005,
   reflectionClamp = 1.0,
+  // Chromatic aberration defaults
+  chromaticAberrationBlackLevel = 0.0,
+  chromaticAberrationWhiteLevel = 1.0,
+  chromaticAberrationRedShift = -1.0,
+  chromaticAberrationGreenShift = 0.0,
+  chromaticAberrationBlueShift = 1.0,
+  chromaticAberrationStrength = 0.0,
 }: Monitor3DProps) {
   const monitorRef = useRef<THREE.Group>(null);
   const frameMeshRef = useRef<THREE.Mesh>(null);
@@ -130,31 +146,15 @@ export default function Monitor3D({
 
     // How wide vs tall the viewport is
   const aspectRatio = windowSize.width / windowSize.height;
-  // You can tweak this “strength” if aspectRatio alone is too aggressive
+  // You can tweak this "strength" if aspectRatio alone is too aggressive
   const horizontalMultiplier = aspectRatio; 
 
   // Get camera reference outside of useMemo to avoid React Hook rules violation
   const { camera: genericCamera } = useThree();
   const camera = genericCamera as PerspectiveCamera;
 
-  const { gl, scene } = useThree();
-
-  const cubeRenderTarget = useMemo(
-    () =>
-      new WebGLCubeRenderTarget(1024, {
-        format: RGBAFormat,
-        generateMipmaps: true,
-        minFilter: LinearMipmapLinearFilter,
-        magFilter: LinearFilter,
-      }),
-    []
-  );
-
-  const cubeCamera = useRef<CubeCamera>(null!);
-
-  useFrame(() => {
-    if (cubeCamera.current) cubeCamera.current.update(gl, scene);
-  });
+  // Create unique key for CubeCamera based on window size to force rebaking on resize
+  const cubeCameraKey = `${windowSize.width}x${windowSize.height}`;
 
   // Memoize all geometry calculations so they only update when window size or margins change
   const geometryData = useMemo(() => {
@@ -446,68 +446,20 @@ export default function Monitor3D({
   ];
   
 
+  const sizeReady = windowSize.width > 0 && windowSize.height > 0;
+  const [showCubeCamera, setShowCubeCamera] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setShowCubeCamera(true);
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+
 
   return (
     <group ref={monitorRef} position={[xOffset, yOffset, -baseDepth / 2]}>
-      {/* cube camera for reflections */}
-      <cubeCamera
-        ref={cubeCamera}
-        args={[0.1, 1000, cubeRenderTarget]}
-        position={[0, 0, glassZOffset + (glassThickness || 0) / 2]}
-      />
-      {/* Frame using memoized CSG geometry */}
-      <mesh ref={frameMeshRef} castShadow receiveShadow>
-        {csgGeometry}
-        <primitive object={frameMaterial} attach="material" />
-      </mesh>
-      {/* Screen area - RECESSED into housing */}
-      <group position={[0, 0, screenZ]}>
-        <ScreenMesh
-          width={Math.max(screenMeshWidth, minGeometrySize)}
-          height={Math.max(screenMeshHeight, minGeometrySize)}
-          yOffset={0}
-          debugMode={debugMode}
-          scanlineStrength={scanlineStrength}
-          lineSpacing={worldLineSpacing}
-          cornerRoundness={cornerRoundness}
-          bubbleSize={bubbleSize}
-          edgeTransition={edgeTransition}
-          displacementAmount={displacementAmount}
-          emissiveBoost={emissiveBoost}
-          terminalTexture={terminalTexture}
-          checkerboardSize={checkerboardSize}
-          enableGlassOverlay={enableGlassOverlay}
-          glassOpacity={glassOpacity}
-          refractionIndex={refractionIndex}
-          reflectionStrength={reflectionStrength}
-          glassTint={glassTint}
-          glassThickness={glassThickness}
-          fresnelPower={fresnelPower}
-          glassZOffset={glassZOffset}
-          envMap={cubeRenderTarget.texture}
-          reflectionClamp={reflectionClamp}
-        />
-      </group>
       {/* White bounce boards */}
-      {/* <mesh rotation={[0, Math.PI / 4, 0]} position={[boardXPos, boardYPos, boardDepth]}>
-        <planeGeometry args={[boardWidth, boardHeight]} />
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh rotation={[0, -Math.PI / 4, 0]} position={[-boardXPos, boardYPos, boardDepth]}>
-        <planeGeometry args={[boardWidth, boardHeight]} />
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh> */}
-      {/* {bounceBoardConfigs.map((b, i) => (
-        <mesh
-          key={i}
-          rotation={[0, b.rotationY, 0]}
-          // place each at (x,y) but z = camera.position.z + boardZOffset
-          position={[b.x, b.y, camera.position.z + boardZOffset]}
-        >
-          <planeGeometry args={[b.width, b.height]} />
-          <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-        </mesh>
-      ))} */}
       {bounceBoards.map((b, i) => {
         const x = b.xNorm * screenHalfWidth * horizontalMultiplier;
         const y = b.yNorm * screenHalfHeight;
@@ -521,12 +473,62 @@ export default function Monitor3D({
               x,
               y,
               glassZOffset + (glassThickness || 0) / 2 + boardZOffset
-            ]}          >
+            ]}
+          >
             <planeGeometry args={[w, h]} />
             <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
           </mesh>
         );
       })}
+
+      {/* cube camera for reflections */}
+      {sizeReady && showCubeCamera && (
+        <DreiCubeCamera key={cubeCameraKey} frames={2} resolution={2048} near={0.1} far={1000}>
+          {envMapTexture => (
+            <group position={[0, 0, screenZ]}>
+              <ScreenMesh 
+                width={Math.max(screenMeshWidth, minGeometrySize)}
+                height={Math.max(screenMeshHeight, minGeometrySize)}
+                yOffset={0}
+                debugMode={debugMode}
+                scanlineStrength={scanlineStrength}
+                lineSpacing={worldLineSpacing}
+                cornerRoundness={cornerRoundness}
+                bubbleSize={bubbleSize}
+                edgeTransition={edgeTransition}
+                displacementAmount={displacementAmount}
+                emissiveBoost={emissiveBoost}
+                terminalTexture={terminalTexture}
+                checkerboardSize={checkerboardSize}
+                enableGlassOverlay={enableGlassOverlay}
+                glassOpacity={glassOpacity}
+                refractionIndex={refractionIndex}
+                reflectionStrength={reflectionStrength}
+                glassTint={glassTint}
+                glassThickness={glassThickness}
+                fresnelPower={fresnelPower}
+                glassZOffset={glassZOffset}
+                envMap={envMapTexture as CubeTexture}
+                reflectionClamp={reflectionClamp}
+                chromaticAberrationBlackLevel={chromaticAberrationBlackLevel}
+                chromaticAberrationWhiteLevel={chromaticAberrationWhiteLevel}
+                chromaticAberrationRedShift={chromaticAberrationRedShift}
+                chromaticAberrationGreenShift={chromaticAberrationGreenShift}
+                chromaticAberrationBlueShift={chromaticAberrationBlueShift}
+                chromaticAberrationStrength={chromaticAberrationStrength}
+              />
+            </group>
+          )}
+        </DreiCubeCamera>
+      )}
+
+      {/* Frame using memoized CSG geometry */}
+      <mesh ref={frameMeshRef} castShadow receiveShadow>
+        {csgGeometry}
+        <primitive object={frameMaterial} attach="material" />
+      </mesh>
+
+
 
       {/* Key light */}
       <pointLight

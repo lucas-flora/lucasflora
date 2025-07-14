@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { ShaderMaterial, CubeTexture } from 'three';
+import { ShaderMaterial, CubeTexture, Texture } from 'three';
 import { extend } from '@react-three/fiber';
+import { useEffect } from 'react';
 
 // GLSL shader for glass overlay with same displacement as screen
 const vertexShader = `
@@ -71,6 +72,15 @@ uniform float screenWidth;
 uniform float screenHeight;
 uniform float reflectionClamp;
 
+// Chromatic aberration uniforms
+uniform sampler2D screenTexture;
+uniform float chromaticAberrationBlackLevel;
+uniform float chromaticAberrationWhiteLevel;
+uniform float chromaticAberrationRedShift;
+uniform float chromaticAberrationGreenShift;
+uniform float chromaticAberrationBlueShift;
+uniform float chromaticAberrationStrength;
+
 // Bubble displacement map generator using world coordinates (same as screen and vertex shader)
 float bubbleMapWorld(vec2 worldPos, float cornerRadius, float size, float transition, float screenW, float screenH) {
   // Convert world position to centered coordinates
@@ -92,34 +102,74 @@ void main() {
   vec3 viewDirection = normalize(cameraPosition - vPosition);
   float fresnel = pow(1.0 - max(dot(vNormal, viewDirection), 0.0), fresnelPower);
   
-  // Base glass color with tint
-  vec3 baseColor = glassTint;
-  
   // Calculate bubble map using the same parameters as displacement
   float cornerRadius = mix(0.01, 0.3, cornerRoundness);
   float bubbleMap = bubbleMapWorld(vWorldPos, cornerRadius, bubbleSize, edgeTransition, screenWidth, screenHeight);
   
-  // Invert the bubble map so reflections are stronger at edges (where glass is curved)
-  // and weaker in center (where glass is flat)
+  // Invert the bubble map so effects are stronger at edges (where glass is curved)
   float invertedBubbleMap = 1.0 - bubbleMap;
   
-  // Clamp the inverted bubble map so it doesn't go completely black in center
-  // This ensures there's still some reflection in the center (grey instead of black)
-  float clampedBubbleMap = max(invertedBubbleMap, reflectionClamp);
+  // LAYER 1: BASE TRANSMISSION (controlled by glassOpacity)
+  vec3 baseTransmission = glassTint * (1.0 - glassOpacity);
   
-  // Use clamped inverted bubble map to control reflection strength, with subtle fresnel influence
-  float reflection = clampedBubbleMap * reflectionStrength * (0.5 + 0.5 * fresnel);
+  // LAYER 2: CHROMATIC ABERRATION (independent of glass opacity)
+  vec3 chromaticColor = vec3(0.0);
+  if (chromaticAberrationStrength > 0.001) {
+    // Create aberration map using inverted bubble map
+    float aberrationMap = (invertedBubbleMap - chromaticAberrationBlackLevel) / (chromaticAberrationWhiteLevel - chromaticAberrationBlackLevel);
+    aberrationMap = clamp(aberrationMap, 0.0, 1.0);
+    
+    // Calculate shift amounts - controlled by strength multiplier, aberration map, and individual channel values
+    float effectiveStrength = chromaticAberrationStrength * aberrationMap * 0.01;
+    vec2 redShift = effectiveStrength * chromaticAberrationRedShift * vec2(1.0, 0.0);
+    vec2 greenShift = effectiveStrength * chromaticAberrationGreenShift * vec2(1.0, 0.0);
+    vec2 blueShift = effectiveStrength * chromaticAberrationBlueShift * vec2(1.0, 0.0);
+    
+    // Sample each color channel with different UV offsets
+    float red = texture2D(screenTexture, vUv + redShift).r;
+    float green = texture2D(screenTexture, vUv + greenShift).g;
+    float blue = texture2D(screenTexture, vUv + blueShift).b;
+    
+    chromaticColor = vec3(red, green, blue);
+  }
   
-  // Mix reflection and refraction based on fresnel for opacity
-  float finalOpacity = mix(glassOpacity, glassOpacity * 0.3, fresnel);
-  
-  // Add environment reflections
+  // LAYER 3: ENVIRONMENT REFLECTIONS (independent of glass opacity)
   vec3 viewDir = normalize(cameraPosition - vPosition);
   vec3 reflectDir = reflect(-viewDir, normalize(vNormal));
   vec3 envColor = textureCube(envMap, reflectDir).rgb;
-  vec3 finalColor = mix(baseColor, envColor, reflection);
   
-  gl_FragColor = vec4(finalColor, finalOpacity);
+  // Use clamped inverted bubble map to control reflection strength
+  float clampedBubbleMap = max(invertedBubbleMap, reflectionClamp);
+  float reflectionAmount = clampedBubbleMap * reflectionStrength * (0.5 + 0.5 * fresnel);
+  
+  // Calculate reflection color without extra boost
+  vec3 reflectionColor = envColor * reflectionAmount;
+  
+  // LAYER 4: COMPOSITE ALL LAYERS
+  vec3 finalColor = vec3(0.0);
+  
+  // Start with base transmission (preserves background color)
+  finalColor = baseTransmission;
+  
+  // If we have chromatic aberration, blend it carefully to preserve background
+  if (chromaticAberrationStrength > 0.001) {
+    // Only apply chromatic aberration where there's actual content
+    // Use the luminance of the chromatic color to determine blend amount
+    float chromaticLuminance = dot(chromaticColor, vec3(0.299, 0.587, 0.114));
+    float blendAmount = chromaticLuminance * 0.8; // Scale down the blend
+    
+    // Blend chromatic aberration over the background, preserving background where content is dark
+    finalColor = mix(baseTransmission, chromaticColor, blendAmount);
+  }
+  
+  // Add reflections on top (PRESERVE REFLECTIONS!)
+  finalColor += reflectionColor;
+  
+  // LAYER 5: FINAL ALPHA - Glass material visibility (NOT transmission)
+  // This should be high enough to see the effects, independent of transmission
+  float materialAlpha = 0.9; // Increase to ensure visibility
+  
+  gl_FragColor = vec4(finalColor, materialAlpha);
 }
 `;
 
@@ -140,6 +190,14 @@ interface GlassShaderMaterialProps {
   fresnelPower?: number;
   envMap?: CubeTexture;
   reflectionClamp?: number;
+  // Chromatic aberration props
+  screenTexture?: Texture;
+  chromaticAberrationBlackLevel?: number;
+  chromaticAberrationWhiteLevel?: number;
+  chromaticAberrationRedShift?: number;
+  chromaticAberrationGreenShift?: number;
+  chromaticAberrationBlueShift?: number;
+  chromaticAberrationStrength?: number;
   [key: string]: unknown;
 }
 
@@ -158,6 +216,14 @@ export default function GlassShaderMaterial({
   fresnelPower = 2.0,
   envMap,
   reflectionClamp = 0.1,
+  // Chromatic aberration defaults
+  screenTexture,
+  chromaticAberrationBlackLevel = 0.0,
+  chromaticAberrationWhiteLevel = 1.0,
+  chromaticAberrationRedShift = -1.0,
+  chromaticAberrationGreenShift = 0.0,
+  chromaticAberrationBlueShift = 1.0,
+  chromaticAberrationStrength = 0.0,
   ...props
 }: GlassShaderMaterialProps) {
   const material = useMemo(
@@ -178,13 +244,21 @@ export default function GlassShaderMaterial({
           fresnelPower: { value: fresnelPower },
           envMap: { value: envMap || null },
           reflectionClamp: { value: reflectionClamp },
+          // Chromatic aberration uniforms
+          screenTexture: { value: screenTexture || null },
+          chromaticAberrationBlackLevel: { value: chromaticAberrationBlackLevel },
+          chromaticAberrationWhiteLevel: { value: chromaticAberrationWhiteLevel },
+          chromaticAberrationRedShift: { value: chromaticAberrationRedShift },
+          chromaticAberrationGreenShift: { value: chromaticAberrationGreenShift },
+          chromaticAberrationBlueShift: { value: chromaticAberrationBlueShift },
+          chromaticAberrationStrength: { value: chromaticAberrationStrength },
         },
         vertexShader,
         fragmentShader,
         transparent: true,
         side: 2, // DoubleSide for glass effect
       }),
-    [cornerRoundness, bubbleSize, edgeTransition, displacementAmount, screenWidth, screenHeight, glassOpacity, refractionIndex, reflectionStrength, glassTint, glassThickness, fresnelPower, envMap, reflectionClamp]
+    [cornerRoundness, bubbleSize, edgeTransition, displacementAmount, screenWidth, screenHeight, glassOpacity, refractionIndex, reflectionStrength, glassTint, glassThickness, fresnelPower, envMap, reflectionClamp, screenTexture, chromaticAberrationBlackLevel, chromaticAberrationWhiteLevel, chromaticAberrationRedShift, chromaticAberrationGreenShift, chromaticAberrationBlueShift, chromaticAberrationStrength]
   );
 
   // Update uniforms on prop change
@@ -202,6 +276,22 @@ export default function GlassShaderMaterial({
   material.uniforms.fresnelPower.value = fresnelPower;
   material.uniforms.envMap.value = envMap || null;
   material.uniforms.reflectionClamp.value = reflectionClamp;
+  // Update chromatic aberration uniforms
+  material.uniforms.screenTexture.value = screenTexture || null;
+  material.uniforms.chromaticAberrationBlackLevel.value = chromaticAberrationBlackLevel;
+  material.uniforms.chromaticAberrationWhiteLevel.value = chromaticAberrationWhiteLevel;
+  material.uniforms.chromaticAberrationRedShift.value = chromaticAberrationRedShift;
+  material.uniforms.chromaticAberrationGreenShift.value = chromaticAberrationGreenShift;
+  material.uniforms.chromaticAberrationBlueShift.value = chromaticAberrationBlueShift;
+  material.uniforms.chromaticAberrationStrength.value = chromaticAberrationStrength;
 
-  return <primitive object={material} attach="material" {...props} />;
+  // Guard and update envMap only when it changes
+  useEffect(() => {
+    if (envMap && material.uniforms.envMap.value !== envMap) {
+      material.uniforms.envMap.value = envMap;
+      material.uniformsNeedUpdate = true;
+    }
+  }, [material, envMap]);
+
+  return <primitive object={material} attach="material" key={envMap?.uuid} {...props} />;
 } 

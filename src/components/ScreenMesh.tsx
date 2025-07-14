@@ -30,6 +30,13 @@ interface ScreenMeshProps {
   glassZOffset?: number;
   envMap?: THREE.CubeTexture;
   reflectionClamp?: number;
+  // Chromatic aberration properties
+  chromaticAberrationBlackLevel?: number;
+  chromaticAberrationWhiteLevel?: number;
+  chromaticAberrationRedShift?: number;
+  chromaticAberrationGreenShift?: number;
+  chromaticAberrationBlueShift?: number;
+  chromaticAberrationStrength?: number;
 }
 
 export default function ScreenMesh({ 
@@ -57,6 +64,13 @@ export default function ScreenMesh({
   glassZOffset = 0.005,
   envMap,
   reflectionClamp = 1.0,
+  // Chromatic aberration defaults
+  chromaticAberrationBlackLevel = 0.0,
+  chromaticAberrationWhiteLevel = 1.0,
+  chromaticAberrationRedShift = -1.0,
+  chromaticAberrationGreenShift = 0.0,
+  chromaticAberrationBlueShift = 1.0,
+  chromaticAberrationStrength = 0.0,
 }: ScreenMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -112,6 +126,13 @@ export default function ScreenMesh({
           glassZOffset={glassZOffset}
           envMap={envMap}
           reflectionClamp={reflectionClamp}
+          screenTexture={terminalTexture || undefined}
+          chromaticAberrationBlackLevel={chromaticAberrationBlackLevel}
+          chromaticAberrationWhiteLevel={chromaticAberrationWhiteLevel}
+          chromaticAberrationRedShift={chromaticAberrationRedShift}
+          chromaticAberrationGreenShift={chromaticAberrationGreenShift}
+          chromaticAberrationBlueShift={chromaticAberrationBlueShift}
+          chromaticAberrationStrength={chromaticAberrationStrength}
         />
       )}
     </group>
