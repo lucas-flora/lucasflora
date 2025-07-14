@@ -287,10 +287,10 @@ export default function Home() {
   const [enableGlassOverlay, setEnableGlassOverlay] = useState(true);
   const [glassOpacity, setGlassOpacity] = useState(0.99);
   const [refractionIndex, setRefractionIndex] = useState(1.9);
-  const [reflectionStrength, setReflectionStrength] = useState(0.2);
+  const [reflectionStrength, setReflectionStrength] = useState(0.03);
   const [glassTint, setGlassTint] = useState<[number, number, number]>([0.45, 0.53, 0.58]);
   const [glassThickness, setGlassThickness] = useState(0.03);
-  const [fresnelPower, setFresnelPower] = useState(0.01);
+  const [fresnelPower, setFresnelPower] = useState(0.1);
   const [glassZOffset, setGlassZOffset] = useState(0.02);
   const [reflectionClamp, setReflectionClamp] = useState(0.09);
   
