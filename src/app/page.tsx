@@ -200,6 +200,12 @@ function MainScene({
 
       {/* Post-processing chain */}
       <EffectComposer>
+        {/* Add your RenderPass, ShaderPass, and Bloom in correct order here if needed */}
+        {/* 
+          <Postprocessing.RenderPass attachArray="passes" scene={genericScene} camera={genericCamera} />
+          <Postprocessing.ShaderPass attachArray="passes" material={glassPassMaterial} />
+        */}
+        {/* Bloom should come last */}
         <Bloom
           intensity={bloomIntensity}
           kernelSize={bloomKernelSize}
